@@ -118,7 +118,9 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
 @media(max-width:760px){.dgrid{grid-template-columns:1fr}.kpi3{grid-template-columns:1fr 1fr}}
 
 /* ===== print ===== */
+.print-cond{display:none}
 @media print{
+  .print-cond{display:block!important;break-inside:avoid;page-break-inside:avoid}
   @page{size:A4 portrait;margin:12mm 10mm}
   header button,nav,#livebar,.btnrow{display:none!important}
   html,body{background:#fff;width:auto;margin:0;padding:0;font-size:10.5pt}
@@ -376,10 +378,20 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
       <div class="note"><b>前提：</b>病気休暇（〜90日）は給与全額 → 休職1年目は給与の約8割 → 以降は無給となり共済の傷病手当金（標準報酬の2/3・最長1年6か月）→ その後は障害厚生年金＋障害基礎年金（2級想定）のみ。地方公務員の一般的な制度に基づく概算で、自治体・共済組合により異なります。公務災害の場合は補償が別枠で手厚くなります。</div>
     </div>
     <div class="card full">
+      <h3>治療にかかるお金（がん等で長期治療になった場合・概算）</h3>
+      <div class="grid">
+        <div class="field"><label>治療期間<span class="unit">か月</span></label><input type="number" id="medMonths" value="6" min="1" max="60"></div>
+        <div class="field"><label>保険がきかない費用<span class="unit">万円/月</span></label><input type="number" id="medExtra" value="3" min="0" step="0.5"><div class="hint">差額ベッド・交通費・ウィッグ・サプリ等</div></div>
+      </div>
+      <div id="medCalc" style="margin-top:12px"></div>
+      <div class="note"><b>前提：</b>保険診療の自己負担は高額療養費制度の上限に加え、共済組合の一部負担金払戻金（自己負担が一定額を超えた分の払戻し）を織り込み、月2.5万円と仮定。治療中は残業・特殊勤務手当が発生しない前提で収入減を計上。先進医療（陽子線・重粒子線等は技術料が全額自己負担）は含んでいません。金額は共済組合・治療内容により異なります。</div>
+    </div>
+    <div class="card full">
       <h3>必要保障額の内訳（死亡時）</h3>
       <div id="needCalc"></div>
     </div>
   </div>
+  <div class="print-cond card full" id="printCond6"></div>
   <div class="note" style="margin-top:14px" id="disclaimer"></div>
   <div class="btnrow"><button class="btn prev" onclick="go(5)">← 戻る</button><button class="btn next" onclick="window.print()">この結果をPDFで渡す</button></div>
 </section>
@@ -1271,6 +1283,38 @@ function recalc(){
   if(cur===7) drawProposal(m);
   if(cur===8) drawDeptCompare(m);
 }
+function renderMedical(m){
+  if(!$('medCalc')) return;
+  const months=V('medMonths')||6;
+  const selfPay=25000; // 高額療養費＋共済の一部負担金払戻金後の月自己負担（仮定）
+  const extraM=V('medExtra')*10000;
+  const incomeLoss=(V('tokushu')+V('zangyo'));
+  const medTotal=selfPay*months, extraTotal=extraM*months, lossTotal=incomeLoss*months;
+  const total=medTotal+extraTotal+lossTotal;
+  $('medCalc').innerHTML=[
+    [`保険診療の自己負担（月2.5万円 × ${months}か月）`,man(medTotal/10000)+' 万円'],
+    [`保険がきかない費用（月${V('medExtra')}万円 × ${months}か月）`,man(extraTotal/10000)+' 万円'],
+    [`収入減：残業・特殊勤務手当（月${man(incomeLoss/10000)}万円 × ${months}か月）`,man(lossTotal/10000)+' 万円'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>治療期間中の家計インパクト合計</span><span class="v" style="color:var(--red)">${man(total/10000)} 万円</span></div>`;
+}
+function buildPrintCond(){
+  const box=$('printCond6');
+  if(!box) return;
+  const sp=+$('spouse').value===1;
+  const kidsTxt=kidAges().length?kidAges().map((k,i)=>`第${i+1}子${k}歳`).join('・'):'なし';
+  const eduLbl={hs:'高卒',cd:'短大卒',uni:'大卒'}[$('edu').value]||'大卒';
+  const rows=[
+    ['年齢',V('age')+'歳'],['消防本部',curDept().name],['階級',$('rank').value],['学歴',eduLbl],
+    ['勤続年数',V('years')+'年'],['級・号俸',$('grade').value+'級'+V('step')+'号俸'],
+    ['配偶者',sp?('あり（'+V('spouseAge')+'歳・年収'+V('spouseInc')+'万円）'):'なし'],['お子さま',kidsTxt],
+    ['生活費（月）',livingM().toFixed(1)+'万円'],['現在の金融資産',V('savings')+'万円'],
+    ['個人保険（死亡保障）',V('kojin')+'万円'],['インフレ率',V('infl')+'%/年'],
+  ];
+  box.innerHTML='<h3>シミュレーション前提条件</h3>'
+    +rows.map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+    +`<div class="note">出力日：${new Date().toLocaleDateString('ja-JP')}｜株式会社ResOne</div>`;
+}
 function renderDash(m){
   const n=needAmount(m);
   const d=disabilityModel(m);
@@ -1278,7 +1322,7 @@ function renderDash(m){
     <div class="kpi ${n.need>0?'alert':''}"><div class="k">死亡時の必要保障額（不足分）</div><div class="v">${man(n.need/10000)}<small> 万円</small></div></div>
     <div class="kpi ${d.worstGap>0?'alert':''}"><div class="k">就業不能時の最大不足額</div><div class="v">${man(d.worstGap/10000)}<small> 万円/月</small></div></div>
     <div class="kpi"><div class="k">退職手当（概算）</div><div class="v">${man(m.taishoku/10000)}<small> 万円</small></div></div>`;
-  renderLifetime(m); drawCliff(m); drawAsset(m); drawIzoku(m); drawDisability(d);
+  renderLifetime(m); drawCliff(m); drawAsset(m); drawIzoku(m); drawDisability(d); renderMedical(m); buildPrintCond();
   $('disCalc').innerHTML=[
     ['毎月の支出（生活費70%・住居・教育費等）',man(d.exp/10000)+' 万円/月'],
     ['障害年金（2級想定・月額）',man(d.shogaiM/10000)+' 万円/月'],
