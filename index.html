@@ -163,7 +163,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
     <h3>ご家族</h3>
     <div class="grid">
       <div class="field"><label>配偶者</label><select id="spouse"><option value="1">あり</option><option value="0">なし</option></select></div>
-      <div class="field"><label>配偶者の年齢</label><input type="number" id="spouseAge" value="30" min="18" max="80"></div>
+      <div class="field spouseField"><label>配偶者の年齢</label><input type="number" id="spouseAge" value="30" min="18" max="80"></div>
       <div class="field"><label>お子さまの人数</label><select id="kidsN"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></div>
     </div>
     <div class="kids" id="kidsBox" style="margin-top:12px"></div>
@@ -198,8 +198,8 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
   <div class="card">
     <h3>世帯のその他収入</h3>
     <div class="grid">
-      <div class="field"><label>配偶者の年収（額面）<span class="unit">万円</span></label><input type="number" id="spouseInc" value="100"></div>
-      <div class="field"><label>配偶者の就労予定年齢まで</label><input type="number" id="spouseWorkTo" value="60" min="30" max="75"></div>
+      <div class="field spouseField"><label>配偶者の年収（額面）<span class="unit">万円</span></label><input type="number" id="spouseInc" value="100"></div>
+      <div class="field spouseField"><label>配偶者の就労予定年齢まで</label><input type="number" id="spouseWorkTo" value="60" min="30" max="75"></div>
     </div>
   </div>
   <div class="card">
@@ -524,7 +524,7 @@ function init(){
   $('fuyo').addEventListener('input',()=>{$('fuyo').dataset.manual='1';});
   setFuyo();
   $('housing').addEventListener('change',housingVis);
-  applyDept(); applyRank(); buildKids(); housingVis();
+  applyDept(); applyRank(); buildKids(); housingVis(); toggleSpouse();
   go(1);
 }
 function onInput(){ recalc(); }
@@ -588,7 +588,8 @@ function estimateStep(force){
   $('step').value = est;
   $('stepHint').textContent = `勤続${V('years')}年からの推定。この級は1〜${max}号俸`;
 }
-document.addEventListener('change', e=>{ if(e.target.id==='grade'||e.target.id==='edu') { estimateStep(true); recalc(); }});
+function toggleSpouse(){ const show=+$('spouse').value===1; document.querySelectorAll('.spouseField').forEach(el=>el.style.display=show?'':'none'); }
+document.addEventListener('change', e=>{ if(e.target.id==='grade'||e.target.id==='edu') { estimateStep(true); recalc(); } if(e.target.id==='spouse'){ toggleSpouse(); recalc(); } });
 
 function buildKids(){
   const n = +$('kidsN').value;
