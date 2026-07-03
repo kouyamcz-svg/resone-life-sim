@@ -433,7 +433,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
       <span><i style="background:rgba(42,157,111,.55)"></i>就業不能保険の受取総額（月額給付×65歳までの残月数）</span>
     </div>
     <div id="propDisCalc" style="margin-top:12px"></div>
-    <div class="note">不足総額は、その年齢で公務外の病気・ケガにより働けなくなり復職しない前提での90歳までの家計不足の累計（発症1年目は給与等で約85%、その後1年6か月は傷病手当金2/3、以降は障害年金2級のみと仮定。65歳以降は退職後の生活費水準に低下）。傷病退職手当（発症時点の勤続年数分）は控除済み。定年まで勤めた場合の退職手当との差額と、厚生年金の積み増し停止による老後の不足が反映されます。就業不能保険は65歳まで月額給付が続く型を想定しています。</div>
+    <div class="note">不足総額は、その年齢で公務外の病気・ケガにより働けなくなり復職しない前提での90歳までの家計不足の累計（発症1年目は給与等で約85%、その後1年6か月は傷病手当金2/3、以降は障害年金2級のみと仮定。生活費は現役時の70%水準、65歳以降は退職後の生活費水準に低下）。傷病退職手当（発症時点の勤続年数分）は控除済み。定年まで勤めた場合の退職手当との差額と、厚生年金の積み増し停止による老後の不足が反映されます。就業不能保険は65歳まで月額給付が続く型を想定しています。</div>
   </div>
   <div class="btnrow"><button class="btn prev" onclick="go(6)">← 戻る</button><button class="btn next" onclick="window.print()">この結果をPDFで渡す</button></div>
 </section>
@@ -905,8 +905,8 @@ function drawIzoku(m){
 /* ============ 就業不能シミュレーション ============ */
 function disabilityModel(m){
   const netMonth=m.annual/12*0.80; // 現在の月手取り（賞与込み・換算）
-  // 毎月の支出（就業不能時：現在の生活水準を維持する前提）
-  let exp=livingM()*10000+housingCostAt(m.age)/12+(V('leisure')+V('carSave'))*10000/12+V('kojinPrem');
+  // 毎月の支出（就業不能時：現役の70%水準）
+  let exp=livingM()*10000*0.70+housingCostAt(m.age)/12+(V('leisure')+V('carSave'))*10000/12*0.70+V('kojinPrem');
   kidAges().forEach((k,i)=>exp+=eduCostAt(k,i)*10000/12);
   // 障害年金（2級想定）：障害厚生（報酬比例・300月みなし）＋障害基礎＋子加算
   const months=Math.max(m.years*12,300);
@@ -1091,7 +1091,7 @@ function disNeedAtOnset(m,dt){
     if(+$('spouse').value && V('spouseAge')+dt+u>=65) inc+=V('kisoNenkin')*0.9; // 配偶者の老齢基礎
     const hp=housingParts(onsetAge+u);
     // 65歳以降は退職後の生活費水準に低下
-    const livRatio=(onsetAge+u<65)?1:V('retireLiving')/100;
+    const livRatio=(onsetAge+u<65)?0.70:V('retireLiving')/100;
     let exp=livingM()*10000*12*livRatio*f+hp.loan+hp.other*f;
     kids.forEach((k,i)=>exp+=eduCostAt(k,i)*10000*f);
     shortage+=Math.max(0,exp-inc);
@@ -1250,7 +1250,7 @@ function renderDash(m){
     <div class="kpi"><div class="k">退職手当（概算）</div><div class="v">${man(m.taishoku/10000)}<small> 万円</small></div></div>`;
   renderLifetime(m); drawCliff(m); drawAsset(m); drawIzoku(m); drawDisability(d);
   $('disCalc').innerHTML=[
-    ['毎月の支出（生活費・住居・教育費等）',man(d.exp/10000)+' 万円/月'],
+    ['毎月の支出（生活費70%・住居・教育費等）',man(d.exp/10000)+' 万円/月'],
     ['障害年金（2級想定・月額）',man(d.shogaiM/10000)+' 万円/月'],
     ['所得補償保険の給付',man(d.hosho/10000)+' 万円/月'],
   ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
