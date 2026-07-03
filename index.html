@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>消防職員ライフシミュレーション | ResOne</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --dark:#1A2744; --red:#E63946; --bg:#F7F8FA; --steel:#5B6B84;
+  --amber:#E8912D; --green:#2A9D6F; --line:#DCE1E9; --ink:#22293A;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px}
+body{font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.num{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif;font-variant-numeric:tabular-nums}
+
+/* ===== header ===== */
+header{background:var(--dark);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+header .brand{font-weight:900;font-size:1.05rem;letter-spacing:.04em}
+header .brand em{color:var(--red);font-style:normal}
+header .sub{font-size:.72rem;color:#9DA9BF;font-weight:500}
+header .spacer{flex:1}
+header button{background:transparent;border:1px solid #3A4A6B;color:#C7D0E0;border-radius:6px;padding:6px 12px;font-size:.78rem;cursor:pointer;font-family:inherit}
+header button:hover{border-color:#fff;color:#fff}
+
+/* ===== step nav ===== */
+nav{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:48px;z-index:40;overflow-x:auto}
+nav .step{flex:1;min-width:110px;padding:10px 6px 8px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;color:var(--steel);user-select:none}
+nav .step .no{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;font-size:.7rem;letter-spacing:.12em;display:block}
+nav .step .lb{font-size:.82rem;font-weight:700}
+nav .step.active{border-bottom-color:var(--red);color:var(--dark)}
+nav .step.done .no::after{content:" ✓";color:var(--green)}
+
+/* ===== layout ===== */
+main{max-width:1080px;margin:0 auto;padding:22px 20px 120px}
+section.panel{display:none}
+section.panel.active{display:block}
+h2.ptitle{font-size:1.3rem;font-weight:900;color:var(--dark);margin-bottom:4px}
+p.pdesc{font-size:.82rem;color:var(--steel);margin-bottom:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:14px}
+.card h3{font-size:.95rem;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h3::before{content:"";width:4px;height:16px;background:var(--red);border-radius:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.field label{display:block;font-size:.76rem;font-weight:700;color:var(--steel);margin-bottom:5px}
+.field input,.field select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font-size:1rem;font-family:inherit;background:#fff;color:var(--ink)}
+.field input:focus,.field select:focus{outline:2px solid var(--dark);outline-offset:-1px}
+.field .hint{font-size:.7rem;color:var(--steel);margin-top:4px}
+.unit{font-size:.75rem;color:var(--steel);margin-left:4px}
+.badge{display:inline-block;font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:99px;vertical-align:middle}
+.badge.real{background:#E3F4EC;color:var(--green)}
+.badge.est{background:#FBF0DD;color:var(--amber)}
+.calc-line{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--line);font-size:.85rem}
+.calc-line:last-child{border-bottom:none}
+.calc-line .v{font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;font-size:1.05rem}
+.calc-line.total{border-top:2px solid var(--dark);border-bottom:none;margin-top:4px;padding-top:10px}
+.calc-line.total .v{font-size:1.35rem;font-weight:700;color:var(--dark)}
+.note{background:#F1F4F9;border-radius:7px;padding:10px 12px;font-size:.73rem;color:var(--steel);line-height:1.6;margin-top:10px}
+.note b{color:var(--dark)}
+.kids .kidrow{display:grid;grid-template-columns:70px 1fr;gap:10px;align-items:center;margin-bottom:8px}
+.kidcard{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#FDFDFE}
+.kidcard .khead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.kidcard .khead .kname{font-size:.85rem;font-weight:700;color:var(--dark)}
+.kidcard .khead .ktotal{font-family:"Barlow Semi Condensed",sans-serif;font-size:1.05rem;font-weight:700;color:#2563EB}
+.kidcard .ktotal small{font-size:.68rem;font-family:"Noto Sans JP";font-weight:500;color:var(--steel)}
+.edurow{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;margin-bottom:8px}
+.edurow .el{font-size:.74rem;font-weight:700;color:var(--steel)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;padding:7px 4px;border:none;background:#fff;font-size:.78rem;font-family:inherit;cursor:pointer;color:var(--steel)}
+.seg button.on{background:var(--dark);color:#fff;font-weight:700}
+.sliderrow{display:grid;grid-template-columns:64px 1fr 84px;gap:10px;align-items:center;margin-bottom:6px}
+.sliderrow input[type=range]{width:100%;accent-color:var(--dark)}
+.slwrap{display:flex;align-items:center;gap:8px;min-width:0}
+.slwrap input[type=range]{flex:1;min-width:0}
+.stepbtn{width:34px;height:34px;min-width:34px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:1.1rem;font-weight:700;color:var(--dark);cursor:pointer;line-height:1;user-select:none;touch-action:manipulation;padding:0}
+.stepbtn:active{background:var(--dark);color:#fff}
+@media(max-width:700px){
+  .sliderrow{grid-template-columns:1fr auto!important;row-gap:4px}
+  .sliderrow .el{grid-column:1;grid-row:1}
+  .sliderrow .sv{grid-column:2;grid-row:1}
+  .sliderrow .slwrap{grid-column:1/-1;grid-row:2}
+}
+.sliderrow .sv{font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;font-size:.9rem;text-align:right;color:var(--dark)}
+.edu-grand{display:flex;justify-content:space-between;align-items:baseline;background:#EFF4FB;border-radius:8px;padding:10px 14px;margin-top:4px}
+.edu-grand .gl{font-size:.76rem;font-weight:700;color:var(--steel)}
+.edu-grand .gv{font-family:"Barlow Semi Condensed",sans-serif;font-size:1.4rem;font-weight:700;color:#2563EB}
+.btnrow{display:flex;gap:10px;margin-top:20px;justify-content:space-between}
+.btn{padding:11px 26px;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+.btn.next{background:var(--dark);color:#fff}
+.btn.next:hover{background:#26375E}
+.btn.prev{background:#fff;color:var(--steel);border:1px solid var(--line)}
+.btn.result{background:var(--red);color:#fff}
+
+/* ===== bottom live bar ===== */
+#livebar{position:fixed;bottom:0;left:0;right:0;background:var(--dark);color:#fff;display:flex;gap:0;z-index:60;box-shadow:0 -4px 16px rgba(26,39,68,.25)}
+#livebar .cell{flex:1;padding:10px 14px;text-align:center;border-right:1px solid rgba(255,255,255,.1)}
+#livebar .cell:last-child{border-right:none}
+#livebar .k{font-size:.64rem;color:#9DA9BF;font-weight:700;letter-spacing:.05em}
+#livebar .v{font-family:"Barlow Semi Condensed",sans-serif;font-size:1.3rem;font-weight:700;line-height:1.2}
+#livebar .v small{font-size:.7rem;font-weight:500;color:#9DA9BF}
+
+/* ===== dashboard ===== */
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dgrid .card{margin-bottom:0}
+.dgrid .full{grid-column:1/-1}
+.chart-wrap{width:100%;overflow:hidden}
+svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:.72rem;color:var(--steel)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi .k{font-size:.7rem;font-weight:700;color:var(--steel)}
+.kpi .v{font-family:"Barlow Semi Condensed",sans-serif;font-size:1.75rem;font-weight:700;color:var(--dark);line-height:1.3}
+.kpi .v small{font-size:.75rem;font-family:"Noto Sans JP";font-weight:500;color:var(--steel)}
+.kpi.alert .v{color:var(--red)}
+
+@media(max-width:760px){.dgrid{grid-template-columns:1fr}.kpi3{grid-template-columns:1fr 1fr}}
+
+/* ===== print ===== */
+@media print{
+  header button,nav,#livebar,.btnrow{display:none!important}
+  body{background:#fff}
+  main{padding-bottom:0;max-width:none}
+  section.panel{display:none!important}
+  body.print7 #p7{display:block!important}
+  body.print8 #p8{display:block!important}
+  body:not(.print7):not(.print8) #p6{display:block!important}
+  .card,.kpi{border:1px solid #bbb;break-inside:avoid}
+  .dash-hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="brand">Res<em>One</em> LIFE SIMULATION</div>
+    <div class="sub">消防職員のためのライフシミュレーション｜埼玉県内26消防本部対応</div>
+  </div>
+  <div class="spacer"></div>
+  <button onclick="window.print()">PDF出力</button>
+  <button onclick="resetAll()">リセット</button>
+</header>
+
+<nav id="stepnav"></nav>
+<main>
+
+<!-- ================= STEP 1 ================= -->
+<section class="panel" id="p1">
+  <h2 class="ptitle">STEP 1｜基本情報</h2>
+  <p class="pdesc">ご本人とご家族の情報を入力します。</p>
+  <div class="card">
+    <h3>ご本人</h3>
+    <div class="grid">
+      <div class="field"><label>年齢</label><input type="number" id="age" value="30" min="18" max="64"></div>
+      <div class="field"><label>消防本部</label><select id="dept"></select><div class="hint" id="deptHint"></div></div>
+      <div class="field"><label>階級</label><select id="rank"></select></div>
+      <div class="field"><label>勤続年数</label><input type="number" id="years" value="10" min="0" max="47"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>ご家族</h3>
+    <div class="grid">
+      <div class="field"><label>配偶者</label><select id="spouse"><option value="1">あり</option><option value="0">なし</option></select></div>
+      <div class="field"><label>配偶者の年齢</label><input type="number" id="spouseAge" value="30" min="18" max="80"></div>
+      <div class="field"><label>お子さまの人数</label><select id="kidsN"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></div>
+    </div>
+    <div class="kids" id="kidsBox" style="margin-top:12px"></div>
+  </div>
+  <div class="btnrow"><span></span><button class="btn next" onclick="go(2)">次へ：収入 →</button></div>
+</section>
+
+<!-- ================= STEP 2 ================= -->
+<section class="panel" id="p2">
+  <h2 class="ptitle">STEP 2｜収入</h2>
+  <p class="pdesc">給料表から基本給を自動推定します。号俸は手動で補正できます。</p>
+  <div class="card">
+    <h3>基本給 <span class="badge" id="tableBadge"></span></h3>
+    <div class="grid">
+      <div class="field"><label>級（階級から自動）</label><select id="grade"></select></div>
+      <div class="field"><label>号俸（勤続年数から推定・補正可）</label><input type="number" id="step" min="1" value="1"><div class="hint" id="stepHint"></div></div>
+      <div class="field"><label>基本給（月額・直接入力で上書き可）</label><input type="number" id="baseOverride" placeholder="自動計算"><div class="hint">給与明細の「給料」欄の額</div></div>
+    </div>
+    <div class="note" id="salaryNote"></div>
+  </div>
+  <div class="card">
+    <h3>手当・賞与</h3>
+    <div class="grid">
+      <div class="field"><label>地域手当率<span class="unit">%</span></label><input type="number" id="chiiki" step="0.5"><div class="hint" id="chiikiHint"></div></div>
+      <div class="field"><label>扶養手当（月額）<span class="unit">円</span></label><input type="number" id="fuyo"><div class="hint">令和8年度の国基準：配偶者0円・子1人13,000円</div></div>
+      <div class="field"><label>夜勤・特殊勤務手当（月額）<span class="unit">円</span></label><input type="number" id="tokushu" value="25000"></div>
+      <div class="field"><label>時間外手当（月平均）<span class="unit">円</span></label><input type="number" id="zangyo" value="30000"></div>
+      <div class="field"><label>住居手当（月額）<span class="unit">円</span></label><input type="number" id="jukyo" value="0"></div>
+      <div class="field"><label>期末・勤勉手当<span class="unit">月分/年</span></label><input type="number" id="bonusM" value="4.6" step="0.05"><div class="hint">年間月数（期末＋勤勉、令和6年度国基準4.60月）。基礎額＝給料＋地域手当。扶養手当は期末分のみ算入。役職段階別加算は未反映</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>世帯のその他収入</h3>
+    <div class="grid">
+      <div class="field"><label>配偶者の年収（額面）<span class="unit">万円</span></label><input type="number" id="spouseInc" value="100"></div>
+      <div class="field"><label>配偶者の就労予定年齢まで</label><input type="number" id="spouseWorkTo" value="60" min="30" max="75"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>収入の計算結果</h3>
+    <div id="incomeCalc"></div>
+  </div>
+  <div class="btnrow"><button class="btn prev" onclick="go(1)">← 戻る</button><button class="btn next" onclick="go(3)">次へ：支出 →</button></div>
+</section>
+
+<!-- ================= STEP 3 ================= -->
+<section class="panel" id="p3">
+  <h2 class="ptitle">STEP 3｜支出・ライフプラン</h2>
+  <p class="pdesc">現在の生活費と、将来かかる費用を入力します。</p>
+  <div class="card">
+    <h3>毎月の生活費（住居費除く）</h3>
+    <div class="grid">
+      <div class="field"><label>食費<span class="unit">万円/月</span></label><input type="number" class="liv" id="livFood" value="7" step="0.5"></div>
+      <div class="field"><label>水道・光熱費<span class="unit">万円/月</span></label><input type="number" class="liv" id="livUtil" value="2" step="0.5"></div>
+      <div class="field"><label>通信費（スマホ・ネット）<span class="unit">万円/月</span></label><input type="number" class="liv" id="livTel" value="1.5" step="0.5"></div>
+      <div class="field"><label>日用品・被服<span class="unit">万円/月</span></label><input type="number" class="liv" id="livGoods" value="2" step="0.5"></div>
+      <div class="field"><label>交際費・おこづかい<span class="unit">万円/月</span></label><input type="number" class="liv" id="livPocket" value="3" step="0.5"></div>
+      <div class="field"><label>車の維持費（ガソリン・保険・車検按分）<span class="unit">万円/月</span></label><input type="number" class="liv" id="livCar" value="2.5" step="0.5"></div>
+      <div class="field"><label>その他<span class="unit">万円/月</span></label><input type="number" class="liv" id="livOther" value="4" step="0.5"></div>
+    </div>
+    <div class="calc-line total" style="margin-top:8px"><span>生活費 月合計</span><span class="v" id="livTotal">-</span></div>
+  </div>
+  <div class="card">
+    <h3>年間の支出・資産・前提</h3>
+    <div class="grid">
+      <div class="field"><label>旅行・レジャー等（年間）<span class="unit">万円</span></label><input type="number" id="leisure" value="50"></div>
+      <div class="field"><label>車の買い替え（年換算積立）<span class="unit">万円/年</span></label><input type="number" id="carSave" value="30"><div class="hint">例：7年ごとに200万円台の車 ≒ 年30万</div></div>
+      <div class="field"><label>現在の金融資産（貯蓄等）<span class="unit">万円</span></label><input type="number" id="savings" value="300"></div>
+      <div class="field"><label>インフレ率（物価上昇率）<span class="unit">%/年</span></label><input type="number" id="infl" value="1.0" step="0.1" min="0" max="5"><div class="hint">生活費・教育費・家賃に毎年適用（ローン返済額は固定）</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>住まい</h3>
+    <div class="grid">
+      <div class="field"><label>住居の状況</label><select id="housing">
+        <option value="rent">賃貸</option>
+        <option value="loan">持ち家（ローン返済中）</option>
+        <option value="own">持ち家（完済）</option>
+        <option value="plan">これから購入予定</option>
+      </select></div>
+      <div class="field" data-h="rent plan"><label>家賃（月）<span class="unit">万円</span></label><input type="number" id="rent" value="8" step="0.5"></div>
+      <div class="field" data-h="rent plan"><label>共益費・管理費（月）<span class="unit">万円</span></label><input type="number" id="hKyoueki" value="0.5" step="0.1"></div>
+      <div class="field" data-h="rent plan"><label>駐車場代（月）<span class="unit">万円</span></label><input type="number" id="hParking" value="0" step="0.1"></div>
+      <div class="field" data-h="rent plan"><label>更新料（年換算）<span class="unit">万円/年</span></label><input type="number" id="hKoushin" value="4" step="0.5"><div class="hint">例：2年ごとに家賃1か月分 ≒ 家賃÷2</div></div>
+      <div class="field" data-h="loan plan"><label>ローン返済額（月）<span class="unit">万円</span></label><input type="number" id="loanPay" value="9" step="0.5"></div>
+      <div class="field" data-h="loan plan"><label>完済予定年齢</label><input type="number" id="loanEnd" value="65"></div>
+      <div class="field" data-h="loan plan"><label>団体信用生命保険</label><select id="danshin"><option value="1">加入あり（万一時ローン消滅）</option><option value="0">なし</option></select></div>
+      <div class="field" data-h="plan"><label>購入予定年齢</label><input type="number" id="buyAge" value="35"></div>
+      <div class="field" data-h="plan"><label>頭金・諸費用（購入時に一括）<span class="unit">万円</span></label><input type="number" id="hAtamakin" value="300"></div>
+      <div class="field" data-h="loan own plan"><label>管理費・修繕積立（月）<span class="unit">万円</span></label><input type="number" id="hKanri" value="1" step="0.1"><div class="hint">戸建ての場合は将来の修繕費の積立額</div></div>
+      <div class="field" data-h="loan own plan"><label>固定資産税（年）<span class="unit">万円</span></label><input type="number" id="hKotei" value="12"></div>
+      <div class="field" data-h="loan own plan"><label>火災・地震保険（年換算）<span class="unit">万円</span></label><input type="number" id="hKasai" value="3" step="0.5"></div>
+    </div>
+    <div class="calc-line total" style="margin-top:8px"><span>住居費 月額換算</span><span class="v" id="housingTotal">-</span></div>
+  </div>
+  <div class="card">
+    <h3>教育費（お子さまごとの進路）</h3>
+    <div id="eduBox"></div>
+    <div class="note">単価（年額）：小学校 公立32万/私立166万・中学校 公立49万/私立141万・高校 公立51万/私立105万・大学 国公立82万/私立131万（文科省「子供の学習費調査」等準拠の概算）。習い事は3〜17歳、塾は小4〜高3の期間で計上。</div>
+  </div>
+  <div class="btnrow"><button class="btn prev" onclick="go(2)">← 戻る</button><button class="btn next" onclick="go(4)">次へ：退職後 →</button></div>
+</section>
+
+<!-- ================= STEP 4 ================= -->
+<section class="panel" id="p4">
+  <h2 class="ptitle">STEP 4｜退職後の見通し</h2>
+  <p class="pdesc">退職手当と年金を推定します。定年年齢は段階的に65歳へ引き上げ中です。</p>
+  <div class="card">
+    <h3>定年・退職手当</h3>
+    <div class="grid" style="margin-bottom:12px">
+      <div class="field"><label>退職時の想定階級</label><select id="retireRank"></select><div class="hint">定年時に到達している階級の想定。給料表からその級の上位号俸で退職時給料を推定</div></div>
+    </div>
+    <div id="retireCalc"></div>
+    <div class="note"><b>定年の段階引き上げ：</b>令和5年度から2年に1歳ずつ引き上げられ、令和13年度に65歳になります。上の定年年齢は生年から自動判定した概算です。<b>退職手当</b>は「退職日給料月額 × 支給率（勤続年数による・上限47.709月）」の国基準ベース概算で、調整額は含みません。退職時給料月額は上で選んだ想定階級の級を給料表から引いた推定値です。</div>
+  </div>
+  <div class="card">
+    <h3>年金の前提（補正可）</h3>
+    <div class="grid">
+      <div class="field"><label>老齢基礎年金（満額・年）<span class="unit">円</span></label><input type="number" id="kisoNenkin" value="831700"><div class="hint">令和7年度満額。改定で変動</div></div>
+      <div class="field"><label>年金払い退職給付（月）<span class="unit">円</span></label><input type="number" id="taishokuKyufu" value="20000"><div class="hint">平均的な水準の概算</div></div>
+      <div class="field"><label>退職後の生活費（現役比）<span class="unit">%</span></label><input type="number" id="retireLiving" value="75"></div>
+      <div class="field"><label>年金受給開始年齢</label><input type="number" id="pensionAge" value="65" min="60" max="75"></div>
+    </div>
+    <div id="pensionCalc" style="margin-top:12px"></div>
+  </div>
+  <div class="btnrow"><button class="btn prev" onclick="go(3)">← 戻る</button><button class="btn next" onclick="go(5)">次へ：保障の現状 →</button></div>
+</section>
+
+<!-- ================= STEP 5 ================= -->
+<section class="panel" id="p5">
+  <h2 class="ptitle">STEP 5｜保障の現状</h2>
+  <p class="pdesc">いま加入している保障を整理します。</p>
+  <div class="card">
+    <h3>万一のときの計算前提</h3>
+    <div class="grid">
+      <div class="field"><label>死亡保障の計算期間</label><select id="deathHorizon">
+        <option value="sp90">配偶者が90歳になるまで</option>
+        <option value="sp65">配偶者の年金受給開始（65歳）まで</option>
+        <option value="kid22">末子が22歳になるまで</option>
+      </select><div class="hint">お子さまがいない場合、「末子まで」は「65歳まで」として計算</div></div>
+      <div class="field"><label>遺族の生活費（現役世帯比）<span class="unit">%</span></label><input type="number" id="izokuLiving" value="70" min="30" max="100"><div class="hint">世帯人数が減る分の生活費低下</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>個人で加入している保障（退職後も続く）</h3>
+    <div class="grid">
+      <div class="field"><label>個人の死亡保障<span class="unit">万円</span></label><input type="number" id="kojin" value="0"></div>
+      <div class="field"><label>個人保険の月額保険料合計<span class="unit">円</span></label><input type="number" id="kojinPrem" value="0"></div>
+      <div class="field"><label>就業不能・所得補償保険（月額給付）<span class="unit">万円</span></label><input type="number" id="shotoku" value="0"></div>
+    </div>
+  </div>
+  <div class="btnrow"><button class="btn prev" onclick="go(4)">← 戻る</button><button class="btn result" onclick="go(6)">結果を見る →</button></div>
+</section>
+
+<!-- ================= STEP 6 ================= -->
+<section class="panel" id="p6">
+  <h2 class="ptitle">STEP 6｜結果ダッシュボード</h2>
+  <p class="pdesc">概算シミュレーション結果です。前提は各ステップでいつでも変更できます。</p>
+  <div class="kpi3" id="kpiBox"></div>
+  <div class="dgrid">
+    <div class="card full">
+      <h3>生涯で受け取るお金（概算・額面）</h3>
+      <div id="lifetimeBox"></div>
+      <div class="note">給与は現在の年収を年1%成長で定年まで、年金は受給開始から90歳まで受け取った場合の合計。額面ベースの概算です。</div>
+    </div>
+
+    <div class="card full">
+      <h3>万一のときの保障 ── 退職前と退職後</h3>
+      <div class="chart-wrap" id="cliffChart"></div>
+      <div class="legend">
+        <span><i style="background:#1A2744"></i>個人保険（一生続く）</span>
+        <span><i style="background:#A8B4C8"></i>遺族年金（概算・総額）</span>
+      </div>
+    </div>
+    <div class="card full">
+      <h3>世帯の資産推移（90歳まで）</h3>
+      <div class="chart-wrap" id="assetChart"></div>
+      <div class="legend">
+        <span><i style="background:#2A9D6F"></i>金融資産残高</span>
+        <span><i style="background:#E63946;height:3px;border-radius:0"></i>残高ゼロライン</span>
+      </div>
+    </div>
+    <div class="card full">
+      <h3>万一のとき、遺されたご家族の家計（遺族年金シミュレーション）</h3>
+      <div class="chart-wrap" id="izokuChart"></div>
+      <div class="legend">
+        <span><i style="background:#C7CFDC"></i>生活費</span>
+        <span><i style="background:#8D9AB0"></i>住居費</span>
+        <span><i style="background:#E8912D"></i>教育費</span>
+        <span><i style="background:#1A2744;height:3px;border-radius:0"></i>遺族の収入（遺族年金＋配偶者収入）</span>
+      </div>
+    </div>
+    <div class="card full">
+      <h3>働けなくなったとき（公務外の病気・ケガ）の収入の階段</h3>
+      <div class="chart-wrap" id="disChart"></div>
+      <div class="legend">
+        <span><i style="background:#5B6B84"></i>公的保障による収入（手取り換算）</span>
+        <span><i style="background:#1A2744"></i>所得補償保険の給付</span>
+        <span><i style="background:#E63946;height:3px;border-radius:0"></i>毎月の支出</span>
+      </div>
+      <div id="disCalc" style="margin-top:12px"></div>
+      <div class="note"><b>前提：</b>病気休暇（〜90日）は給与全額 → 休職1年目は給与の約8割 → 以降は無給となり共済の傷病手当金（標準報酬の2/3・最長1年6か月）→ その後は障害厚生年金＋障害基礎年金（2級想定）のみ。地方公務員の一般的な制度に基づく概算で、自治体・共済組合により異なります。公務災害の場合は補償が別枠で手厚くなります。</div>
+    </div>
+    <div class="card full">
+      <h3>必要保障額の内訳（死亡時）</h3>
+      <div id="needCalc"></div>
+    </div>
+  </div>
+  <div class="note" style="margin-top:14px" id="disclaimer"></div>
+  <div class="btnrow"><button class="btn prev" onclick="go(5)">← 戻る</button><button class="btn next" onclick="window.print()">この結果をPDFで渡す</button></div>
+</section>
+
+
+<!-- ================= STEP 7 ================= -->
+<section class="panel" id="p7">
+  <h2 class="ptitle">STEP 7｜必要保障額を保険でカバーする</h2>
+  <p class="pdesc">スライダーを動かすと、必要保障額の棒に提案する保障が重なります。</p>
+  <div class="card">
+    <h3>提案する収入保障保険（死亡保障・月額給付型）</h3>
+    <div class="propctl">
+      <div class="sliderrow" style="grid-template-columns:150px 1fr 130px">
+        <span class="el">月額給付</span>
+        <div class="slwrap">
+          <button type="button" class="stepbtn" onclick="stepSlider('propDeathM',-1)">−</button>
+          <input type="range" id="propDeathM" min="0" max="30" step="1" value="0">
+          <button type="button" class="stepbtn" onclick="stepSlider('propDeathM',1)">＋</button>
+        </div>
+        <span class="sv" id="propDeathMV">0 万円/月</span>
+      </div>
+      <div class="sliderrow" style="grid-template-columns:150px 1fr 130px">
+        <span class="el">満了年齢</span>
+        <div class="slwrap">
+          <button type="button" class="stepbtn" onclick="stepSlider('propMat',-1)">−</button>
+          <input type="range" id="propMat" min="40" max="80" step="1" value="65">
+          <button type="button" class="stepbtn" onclick="stepSlider('propMat',1)">＋</button>
+        </div>
+        <span class="sv" id="propMatV">65 歳満了</span>
+      </div>
+    </div>
+    <div class="hint" id="propTotalHint" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <h3>年ごとの必要保障額と保険のカバー</h3>
+    <div class="chart-wrap" id="propChart"></div>
+    <div class="legend">
+      <span><i style="background:#EDF0F5;border:1px solid #E63946"></i>必要保障額（その年に万一があった場合の不足額）</span>
+      <span><i style="background:rgba(42,157,111,.55)"></i>収入保障保険の受取総額（月額給付×満了までの残月数）</span>
+    </div>
+    <div id="propCalc" style="margin-top:12px"></div>
+    <div class="note">必要保障額は「その年齢で死亡した場合の、遺族の生涯不足額 −（その時点の死亡退職手当＋既加入の個人保険）」の概算。お子さまの成長とともに減っていくため、受取総額が年々減る収入保障型の保険と形が合います。月額給付は当初受取総額が最大1億円になる範囲で設定できます。</div>
+  </div>
+  <div class="card">
+    <h3>年ごとの就業不能時の不足額と保険のカバー</h3>
+    <div class="propctl" style="margin-bottom:10px">
+      <div class="sliderrow" style="grid-template-columns:150px 1fr 130px">
+        <span class="el">就業不能（月額給付・65歳まで）</span>
+        <div class="slwrap">
+          <button type="button" class="stepbtn" onclick="stepSlider('propDis',-1)">−</button>
+          <input type="range" id="propDis" min="0" max="30" step="1" value="0">
+          <button type="button" class="stepbtn" onclick="stepSlider('propDis',1)">＋</button>
+        </div>
+        <span class="sv" id="propDisV">0 万円/月</span>
+      </div>
+    </div>
+    <div class="chart-wrap" id="propDisChart"></div>
+    <div class="legend">
+      <span><i style="background:#EDF0F5;border:1px solid #E63946"></i>不足総額（その年に働けなくなった場合・90歳まで）</span>
+      <span><i style="background:rgba(42,157,111,.55)"></i>就業不能保険の受取総額（月額給付×65歳までの残月数）</span>
+    </div>
+    <div id="propDisCalc" style="margin-top:12px"></div>
+    <div class="note">不足総額は、その年齢で公務外の病気・ケガにより働けなくなり復職しない前提での90歳までの家計不足の累計（発症1年目は給与等で約85%、その後1年6か月は傷病手当金2/3、以降は障害年金2級のみと仮定。65歳以降は退職後の生活費水準に低下）。傷病退職手当（発症時点の勤続年数分）は控除済み。定年まで勤めた場合の退職手当との差額と、厚生年金の積み増し停止による老後の不足が反映されます。就業不能保険は65歳まで月額給付が続く型を想定しています。</div>
+  </div>
+  <div class="btnrow"><button class="btn prev" onclick="go(6)">← 戻る</button><button class="btn next" onclick="window.print()">この結果をPDFで渡す</button></div>
+</section>
+
+<!-- ================= STEP 8 ================= -->
+<section class="panel" id="p8">
+  <h2 class="ptitle">STEP 8｜埼玉県内26消防本部の月収比較</h2>
+  <p class="pdesc">同じ階級・勤続年数を各本部の給料表・階級対応に当てはめて比較した参考ページです。</p>
+  <div class="card">
+    <h3>同じ階級・勤続年数ならどうなるか</h3>
+    <div class="chart-wrap" id="deptCompareChart"></div>
+    <div class="note" id="deptCompareNote"></div>
+  </div>
+  <div class="btnrow"><button class="btn prev" onclick="go(6)">← 結果に戻る</button><button class="btn next" onclick="window.print()">このページをPDFで渡す</button></div>
+</section>
+
+</main>
+
+<div id="livebar">
+  <div class="cell"><div class="k">基本給（月）</div><div class="v num" id="lbBase">-</div></div>
+  <div class="cell"><div class="k">月収（額面）</div><div class="v num" id="lbMonth">-</div></div>
+  <div class="cell"><div class="k">年収（額面）</div><div class="v num" id="lbYear">-</div></div>
+  <div class="cell"><div class="k">定年年齢</div><div class="v num" id="lbRetire">-</div></div>
+</div>
+
+<script>
+const DATA = {"tables":{"saitama":{"1":[205300,206700,208000,209300,210600,212200,213700,215200,216700,218400,220100,221800,223400,225200,226900,228600,230300,232100,233800,235500,237200,239000,240700,242400,244100,245500,246800,248100,249400,250600,251700,252900,254000,255100,256100,257100,258100,259200,260200,261200,262200,263300,264300,265300,266300,267400,268400,269400,270400,271500,272500,273500,274500,275600,276600,277600,278600,279700,280700,281700,282700,283800,284800,285800,286800,287900,288900,289900,290900,291900,292900,293900,294800,295800,296700,297700,298600,299400,300200,301000,301800,302500,303200,303900,304500,305000,305500,306000,306400],"2":[274000,275400,276800,278200,279500,280900,282300,283700,285000,286400,287800,289200,290500,291900,293300,294700,296000,297400,298700,300000,301300,302600,303900,305200,306500,307700,308900,310100,311300,312500,313600,314800,315900,317100,318200,319300,320400,321600,322700,323800,324900,326100,327200,328300,329400,330600,331700,332800,333900,335100,336200,337300,338400,339600,340700,341800,342900,343900,344800,345700,346600,347500,348300,349200,350000,350800,351500,352300,353000,353700,354400,355100,355800,356500,357200,357900,358500,359200,359800,360400,361000,361500,362000,362500,362900,363400,363900,364400,364800,365300,365700,366200,366600,367100,367500,368000,368400,368900,369300,369700,370100],"3":[302000,303600,305200,306800,308400,310000,311600,313200,314800,316400,318000,319600,321200,322800,324400,326000,327600,329200,330800,332400,334000,335600,337200,338800,340400,342000,343600,345200,346800,348400,350000,351600,353200,354700,356100,357600,359000,360500,361900,363400,364800,366300,367700,369100,370500,371900,373300,374700,376100,377400,378700,380000,381300,382400,383500,384600,385700,386600,387500,388400,389300,390100,390800,391600,392300,393100,393800,394600,395300,396100,396800,397600,398300,399000,399600,400200,400800,401400,402000,402600,403100,403700,404200,404800,405300,405800,406200,406700,407100,407500,407900,408300,408700,409100,409500,409900,410200,410600,411000,411400,411700],"4":[329500,331000,332500,334000,335400,336900,338400,339900,341300,342800,344300,345800,347200,348700,350200,351700,353100,354600,356100,357600,359000,360500,362000,363500,364900,366400,367900,369400,370800,372200,373500,374900,376200,377500,378800,380100,381300,382500,383700,384900,386100,387300,388400,389600,390700,391700,392700,393700,394700,395500,396300,397100,397800,398500,399200,399900,400600,401200,401800,402400,403000,403600,404200,404800,405400,406000,406600,407200,407800,408400,408900,409400,409900,410400,410900,411400,411800,412300,412700,413100,413500,413900,414300,414700,415000,415400,415800,416200,416500,416800,417100,417400,417700,418000,418300,418600,418900,419200,419500,419800,420100],"5":[360800,362200,363600,365000,366400,367800,369200,370600,372000,373400,374800,376200,377600,379000,380400,381800,383200,384600,386000,387400,388800,390200,391600,393000,394400,395800,397200,398600,400000,401400,402800,404200,405600,407000,408400,409800,411200,412400,413500,414600,415700,416500,417200,418000,418700,419400,420000,420600,421200,421800,422400,423000,423500,424000,424400,424800,425200,425500,425800,426100,426400,426700,427000,427300,427600,427900,428200,428500,428800,429100,429400,429700,430000,430300,430600,430900,431100],"6":[377100,379200,381300,383400,385400,387500,389600,391700,393700,395800,397900,400000,402000,404100,406200,408300,410300,412400,414500,416600,418600,420700,422700,424800,426800,428700,430500,432300,434100,435600,437100,438600,440000,441300,442500,443800,445000,446300,447500,448700,449900,450700,451400,452200,452900,453600,454300,455000,455700,456300,456900,457500,458000,458500,459000,459500,459900,460400,460800,461300,461700,462200,462600,463000,463400,463900,464300,464700,465100,465500,465900,466300,466600,467000,467300,467600,467900],"7":[412400,414900,417300,419800,422200,424700,427100,429600,432000,434500,436900,439400,441800,444200,446500,448900,451200,453500,455800,458100,460300,461900,463500,465100,466600,468200,469700,471300,472800,474200,475600,477000,478400,479700,480900,482100,483300,484400,485500,486600,487600,488500,489400,490300,491200,491800,492400,493000,493600],"8":[502000,507700,513200,518500,523600,528500,533200,537700,542000],"9":[552100,557600,563100,568600,574100,579600,585100,590600]},"national":{"1":[135600,136700,137900,139000,140100,141200,142300,143400,144500,145900,147200,148500,149800,151300,152800,154400,155700,157200,158700,160200,161600,164300,166900,169500,172200,173900,175600,177300,178800,180600,182400,184200,185800,187300,188800,190300,191600,192900,194200,195500,196900,198200,199500,200800,202000,203300,204600,205900,207100,208200,209300,210400,211600,212600,213600,214600,215600,216600,217600,218600,219600,220600,221600,222600,223400,224400,225400,226500,227300,228100,228900,229700,230500,231200,231900,232600,233400,234200,235000,235800,236500,237200,237900,238600,239400,240100,240800,241500,242300,242800,243300,243800,244100],"2":[185800,187600,189400,191200,192800,194600,196400,198200,200000,201800,203600,205400,207000,208900,210800,212700,214600,216500,218400,220300,222000,223900,225800,227700,229500,231300,233100,234900,236500,238000,239500,241000,242500,244000,245500,247100,248400,250000,251600,253200,254600,256000,257400,258800,260100,261500,262900,264300,265600,266900,268200,269500,270600,271900,273200,274500,275700,276800,277900,279000,280200,281200,282200,283200,284200,285100,286000,286900,287900,288700,289500,290300,291100,291600,292100,292600,293000,293400,293800,294200,294500,294900,295300,295700,296000,296400,296800,297200,297500,297900,298300,298700,298900,299300,299700,300100,300300,300700,301100,301500,301700,302100,302500,302900,303100,303500,303900,304300,304500,304900,305300,305700,305900,306300,306700,307100,307300,307600,307900,308200,308600,308900,309200,309500,309900],"3":[222900,224800,226700,228500,230200,232100,234000,235800,237700,239600,241500,243400,245300,247200,249000,250800,252600,254600,256600,258600,260500,262400,264300,266200,268200,270100,272000,273900,275800,277700,279600,281500,283200,285100,287000,288900,290600,292400,294200,296000,297900,299600,301300,303000,304700,306400,308100,309800,311300,312900,314500,316100,317800,319400,321000,322600,324100,325300,326500,327700,328800,329800,330800,331800,332700,333500,334300,335100,336000,336700,337400,338100,338600,339200,339800,340400,340800,341300,341800,342300,342800,343300,343800,344300,344800,345300,345800,346300,346700,347200,347700,348200,348500,349000,349500,350000,350300,350800,351300,351800,352100,352500,352900,353300,353800,354200,354600,355000,355500,355900,356300,356700,357200],"4":[262300,264400,266500,268600,270700,272800,274900,277000,279100,281200,283300,285400,287500,289600,291700,293800,295900,298000,300100,302200,304300,306400,308500,310600,312600,314700,316800,318900,320900,323000,325100,327200,329100,331200,333300,335400,337300,339300,341300,343300,345200,347100,349000,350900,352800,354400,356000,357600,359300,360500,361700,362900,363900,365000,366100,367200,368100,368800,369500,370200,370800,371500,372200,372900,373400,374100,374800,375500,376000,376700,377400,378100,378600,379300,380000,380700,381200,381800,382400,383000,383700,384300,384900,385500,386200,386800,387400,388000,388700,389300,389900,390500,391200],"5":[289700,292000,294300,296600,298700,301000,303300,305600,307800,310100,312400,314700,316900,319100,321300,323500,325700,327800,329900,332000,334100,336200,338300,340400,342300,344300,346300,348300,350200,352100,354000,355900,357800,359600,361400,363200,365100,366600,368100,369600,371100,372300,373500,374700,375700,376600,377500,378400,379400,380200,381000,381800,382700,383400,384100,384800,385500,386200,386900,387600,388100,388800,389500,390200,390700,391400,392100,392800,393300,394000,394700,395400,395900,396600,397300,398000,398500,399200,399900,400600,401100,401800,402500,403200,403700],"6":[321100,323400,325700,328000,330300,332500,334700,336900,339200,341400,343600,345800,347800,349900,352000,354100,356300,358300,360300,362300,364400,366400,368400,370400,372500,374500,376500,378500,380500,382400,384300,386200,388000,389700,391400,393100,394800,396000,397200,398400,399600,400800,402000,403200,404200,404900,405600,406300,407100,407800,408500,409200,410000,410700,411400,412100,412800,413500,414200,414900,415500,416200,416900,417600,418100,418800,419500,420200,420700,421400,422100,422800,423300,424000,424700,425400,425900],"7":[367200,369800,372400,375000,377600,380200,382800,385400,388000,390700,393400,396100,398700,401100,403500,405900,408200,410300,412400,414500,416600,418600,420600,422600,424700,426300,427900,429500,431200,432500,433800,435100,436400,437700,439000,440300,441600,442500,443400,444300,445100,445900,446700,447500,448300,449100,449900,450700,451300,452100,452900,453700,454300,455100,455900,456700,457300,458100,458900,459700,460300],"8":[414800,417300,419800,422300,424600,427000,429400,431800,434100,436400,438700,441000,443200,445200,447200,449200,451200,453000,454800,456600,458400,459900,461400,462900,464400,465800,467200,468600,469800,470600,471400,472200,473000,473800,474600,475400,476200,477000,477800,478600,479400,480200,481000,481800,482600]},"kumagaya":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500,397000,397400,397800,398100,398600,399000,399400,399700,400100,400400,400700,400900,401300,401600,401900,402100,402600,403000,403400,403700,404200,404600,405000,405300,405800,406200,406600,406900,407400,407800,408200,408500,409000,409400,409800,410100,410600,411000,411400,411700],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,424900,425200,425500,425700,425900,426200,426500,426700,426900,427200,427500,427700,427900,428200,428500,428700,428900,429200,429500,429700,429900,430200,430500,430700,430900,431200,431500,431700],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,467600,469100,470500,472000,473400,474700,476000,477200,478200,478900,479600,480300,481000],"8":[471900,473400,474800,476100,477400,478600,479600,480300,481000,481700,482400,483100,483700,484300,484800,485400,486000,486600,487100,487600,488000,488300,488600,494200,497200,500300,503000,506100,509100,512200,514900,517200,519500,521800,523800]},"kasukabe":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"fukaya":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200,364600,364900,365200,365600,366000,366300,366600,367000,367400,367700,368000,368400],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500,397000,397400,397800,398100,398600,399000,399400,399700,400200,400600,401000,401300,401800,402200,402600,402900,403400,403800],"5":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000,427300,427600,427800,428000,428300,428600,428800],"6":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000,463300,463600,463900,464200,464500,464800,465100,465400,465700,466000,466300,466600,466900,467200,467500],"7":[471900,472900,473800,474700,475600,476500,477200,478100,479000,479800,480600,481400,482100,482900,483700,484500,485300,486100,486700,487400,488100,488800,489500,490100,490700,491300,491900,492500,493100,493700,494100,494600,495100,495600,496100,496600,497000,497500,497900,498300,498700,499100,499500,499900,500300,500700,501100,501500,501900,502300,502700,503100],"8":[477200,478500,479800,481000,482100,483300,484500,485700,486700,487700,488700,489700,490700,491600,492500,493400,494100,494900,495700,496400,497000,497700,498300,498900,499500,500000,500500,501000,501500,502000,502500,503000,503500,504000,504500,505000,505500,506000,506500,507000,507500,508000,508500,509000,509500,510000,510500,511000,511500,512000,512500,513000]},"kawaguchi":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"gyoda":{"1":[183500,184600,185800,186900,188000,189700,191300,192900,194500,196200,197800,199400,201000,202700,204400,206100,207400,209000,210600,212100,213600,215200,216800,218400,220000,221700,223000,224300,225600,226700,227800,228900,230000,231100,232200,233300,234400,235400,236400,237300,238200,239100,239900,240700,241400,242000,242600,243200,243800,244400,245000,245500,246000,246400,246700,247000,247300,247600,247900,248200,248500,248800,249100,249400,249700,250000,250300,250600,250900,251200,251500,251800,252100,252400,252700,253000,253300,253600,253900,254200,254500,254800,255100,255400,255700,256000,256300,256600,256900,257200,257500,257800,258100],"2":[230000,231500,233000,234500,236000,237500,239000,240500,242000,243400,244800,246200,247400,248600,249800,251000,252100,253200,254300,255400,256400,257400,258400,259400,260400,261300,262200,263100,263900,264700,265500,266300,267000,267800,268600,269300,270000,270800,271600,272300,273000,273800,274600,275300,276000,276700,277400,278100,278800,279500,280200,280900,281500,282200,282800,283500,284100,284800,285400,286100,286700,287400,288000,288500,289000,289600,290100,290700,291200,291700,292300,292900,293400,293900,294300,294600,294800,295100,295300,295600,295800,296000,296300,296500,296800,297100,297400,297700,298000,298300,298600,299000,299200,299400,299700,300100,300300,300600,301000,301400,301600,301900,302200,302500,302700,303000,303300,303600,303800,304200,304600,304900,305100,305300,305600,306000,306200,306400,306700,307000,307400,307600,307900,308200,308500],"3":[265300,266300,267300,268300,269300,270300,271300,272300,273300,274300,275300,276400,277400,278700,280000,281200,282500,283800,285000,286200,287300,288500,289800,291100,292400,293400,294400,295500,296600,297800,298900,300100,301300,302600,303900,305200,306500,307800,309100,310400,311700,313000,314300,315400,316300,317600,318900,320200,321400,322700,323900,325100,326400,327500,328600,329700,330400,331300,332000,332800,333600,334000,334600,335300,336100,336800,337500,338100,338600,339200,339700,340300,340600,341100,341500,341900,342300,342800,343300,343800,344100,344500,344900,345300,345600,346000,346400,346800,347000,347400,347800,348200,348400,348800,349200,349500,349800,350200,350600,351000,351500,351900,352300,352700,353200,353600,353900,354200,354700],"4":[298800,300300,301800,303200,304600,305700,306700,307900,309100,310700,312300,313900,315400,317000,318600,320200,321700,323400,325000,326600,328000,329700,331400,333000,334200,336100,337800,339400,340900,342500,344100,345700,347400,349200,351000,352800,354300,355700,357100,358500,360000,360800,361800,362800,363700,364800,365700,366700,367600,368300,369000,369600,370000,370600,371300,372000,372300,373000,373700,374300,374600,375100,375700,376300,376600,377200,377900,378500,378900,379400,380000,380500,381000,381600,382100,382400,382800,383300,383700,384100,384500,385000,385400,385800,386100],"5":[321300,323100,324900,326600,328300,330000,331700,333400,335000,336700,338400,340000,341500,343100,344700,346200,347600,349300,350900,352500,353700,355200,356700,358200,359900,361700,363400,365100,366500,367800,369000,370400,371500,372400,373400,374500,375300,376200,377100,377900,378700,379500,380300,381000,381700,382400,383100,383800,384300,384900,385500,386200,386600,387200,387800,388300,388700,389300,389900,390400,390800,391300,391800,392400,392700,393100,393500,393900,394200,394500,394800,395000,395200,395500,395800,396000,396200,396500,396800,397000,397200,397500,397800,398000,398200],"6":[355200,356900,358500,360100,361700,363500,365000,366600,368000,369600,371200,372700,374600,376500,378400,380200,381700,383500,385200,386800,388500,389900,391300,392700,394100,395300,396500,397500,398600,399800,400900,402000,402700,403400,404100,404800,405400,406000,406500,406900,407300,407500,407800,408100,408400,408700,409000,409300,409500,409800,410100,410400,410600,410900,411200,411500,411700,412000,412300,412500,412700,413000,413300,413500,413700,414000,414300,414500,414700,415000,415300,415500,415700],"7":[408300,410200,412100,413900,415700,417500,419300,421100,422700,424200,425700,427200,428700,430000,431300,432500,433700,435000,436300,437500,438700,439500,440300,441100,441700,442300,442900,443500,444200,445000,445400,446100,446600,447000,447400,447800,448200,448600,449000,449300,449600,450000,450300,450600,450900],"8":[458300,463800,468800,473500,477500,481000,484000,486500,488500]},"kawagoe":{"1":[225600,228000,230400,232800,235100,237500,239900,242100,244300,246400,248500,250500,252400,254400,256400,258000,259600,261100,262600,264100,265600,267100,268600,270100,271600,272800,274000,275200,276400,277500,278600,279700,281000,282300,283500,284800,285700,286700,287800,288900,290100,290700,291300,291800,292200,292700,293200,293700,294100,294600,295100,295600,296100,296700,297100,297500,298000,298500,299000,299400,299900,300300,300800,301200,301700,302200,302600,303000,303500,303900,304300,304800,305300,305800,306400,306800,307300,307800,308400,309000,309500,310000,310700,311300,311900,312500,313200,313900,314600,315300,316000,316700,317200,318100,319000,319800,320500,321400,322300,323200,324100,325100,326100,327000,327800,328400,329000,329600,330100,330600,331000,331500,332300,332900,333600,334200,334800,335500,336200,336900,337500,337800,338300,338800,339100],"2":[269600,271500,273600,275700,277700,279000,280300,281600,282900,284200,285400,286600,287800,288800,289800,291200,292300,293400,294500,295600,296800,297400,297900,298500,298900,299500,300000,300500,300900,301500,302000,302500,303000,303600,304000,304400,304900,305500,306100,306600,307200,307900,308600,309200,309800,310600,311400,312100,312900,313900,314900,315900,316900,318000,319000,320000,321000,322100,323200,324300,325100,326200,327300,328400,329300,330400,331500,332600,333600,334700,335900,337100,337800,339100,340400,341700,342900,344300,345700,347100,348400,350000,351500,353000,354400,355900,357400,358800,360100,361300,362500,363800,365100,366600,368100,369500,370800,372000,373100,374300,375400,376500,377600,378700,379900,380400,381000,381600,382200,382700,383100,383600,384000,384400,384900,385400,385800,386300,386900,387400,387600,388100,388600,389000,389500,390000,390500,391000,391300,391800,392300,392800,393100,393600,394000,394400,394700,395100,395600,396100,396400],"3":[308200,309200,310100,311000,311600,312300,312900,313600,314200,314900,315600,316200,316900,317600,318200,319000,319700,320500,321500,322300,323200,324400,325700,327000,328200,329700,331000,332000,332900,334100,335200,336300,337400,338600,339800,340800,341900,343100,344300,345500,346600,347700,348900,350100,351200,352500,353700,354900,356100,357400,358700,360000,360900,362200,363400,364600,365700,367000,368400,369800,371100,372600,374100,375500,376700,378100,379400,380800,381900,383100,384300,385500,386800,388000,389200,390300,391400,392600,393700,394900,396000,396600,397100,397600,398200,398800,399400,400000,400300,400800,401300,401800,402200,402600,403100,403600,404000,404500,405000,405400,405700,406100,406500,406800,407100,407600,408100,408600,408900,409400,409900,410400,410700,411200,411700,412200,412600,413100,413500,414000,414400],"4":[344100,345600,347000,348500,350000,351400,352700,354000,355300,356900,358500,360100,361500,363100,364600,366100,367600,369200,370700,372200,373700,375300,376900,378500,379900,381600,383300,384900,386500,388100,389700,391300,393000,395000,397000,399000,400700,402400,403900,405400,406600,407600,408600,409600,410600,411700,412800,413900,415200,416000,416800,417400,417900,418600,419200,419900,420200,420900,421600,422100,422500,422900,423400,423900,424400,424800,425300,425800,426300,426800,427400,427900,428300,428900,429300,429500,429800,430300,430600,430900,431200,431600,432000,432400,432700],"5":[365700,367400,369100,370700,372300,374000,375600,377100,378600,380200,381800,383400,385000,386600,388200,389800,391400,393000,394600,396200,397700,399300,401000,402700,404400,406400,408200,410100,411800,413200,414400,415700,416700,417800,418800,419800,420900,422000,423100,424200,425400,426200,427000,427600,428100,428800,429500,430100,430800,431200,431800,432400,432800,433200,433700,434200,434700,435200,435600,436000,436400,436700,437000,437300,437500,437800,438100,438300,438500,438800,439100,439300,439500,439800,440100,440300,440500,440800,441100,441300,441500,441800,442100,442300,442500],"6":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"7":[471900,477200,482100,486700,490700,494100,497000,499500,501500],"8":[525300,532000,537100,541300,544700,547900,550800,553300,555300]},"seibu":{"1":[201000,202700,204400,206100,207400,209000,210600,212100,213600,215200,216800,218400,220000,221700,223000,224300,225600,226700,227800,228900,230000,231100,232200,233300,234400,235400,236400,237300,238200,239100,239900,240700,241400,242000,242600,243200,243800,244400,245000,245500,246000,246400,246700,247000,247300,247600,247900,248200,248500,248800,249100,249400,249700,250000,250300,250600,250900,251200,251500,251800,252100,252400,252700,253000,253300,253600,253900,254200,254500,254800,255100,255400,255700,256000,256300,256600,256900,257200,257500,257800,258100],"2":[223100,224900,226700,228500,230000,231500,233000,234500,236000,237500,239000,240500,242000,243400,244800,246200,247400,248600,249800,251000,252100,253200,254300,255400,256400,257400,258400,259400,260400,261300,262200,263100,263900,264700,265500,266300,267000,267800,268600,269300,270000,270800,271600,272300,273000,273800,274600,275300,276000,276700,277400,278100,278800,279500,280200,280900,281500,282200,282800,283500,284100,284800,285400,286100,286700,287400,288000,288500,289000,289600,290100,290700,291200,291700,292300,292900,293400,293900,294300,294600,294800,295100,295300,295600,295800,296000,296300,296500,296800,297100,297400,297700,298000,298300,298600,299000,299200,299400,299700,300100,300300,300600,301000,301400,301600,301900,302200,302500,302700,303000,303300,303600,303800,304200,304600,304900,305100,305300,305600,306000,306200,306400,306700,307000,307400,307600,307900,308200,308500],"3":[246700,248600,250500,252300,254000,255900,257800,259600,261300,262300,263300,264300,265300,266300,267300,268300,269300,270300,271300,272300,273300,274300,275300,276400,277400,278700,280000,281200,282500,283800,285000,286200,287300,288500,289800,291100,292400,293400,294400,295500,296600,297800,298900,300100,301300,302600,303900,305200,306500,307800,309100,310400,311700,313000,314300,315400,316300,317600,318900,320200,321400,322700,323900,325100,326400,327500,328600,329700,330400,331300,332000,332800,333600,334000,334600,335300,336100,336800,337500,338100,338600,339200,339700,340300,340600,341100,341500,341900,342300,342800,343300,343800,344100,344500,344900,345300,345600,346000,346400,346800,347000,347400,347800,348200,348400,348800,349200,349500,349800,350200,350600,351000,351500,351900,352300,352700,353200,353600,353900,354200,354700],"4":[287300,288900,290400,291900,293400,294900,296300,297600,298800,300300,301800,303200,304600,305700,306700,307900,309100,310700,312300,313900,315400,317000,318600,320200,321700,323400,325000,326600,328000,329700,331400,333000,334200,336100,337800,339400,340900,342500,344100,345700,347400,349200,351000,352800,354300,355700,357100,358500,360000,360800,361800,362800,363700,364800,365700,366700,367600,368300,369000,369600,370000,370600,371300,372000,372300,373000,373700,374300,374600,375100,375700,376300,376600,377200,377900,378500,378900,379400,380000,380500,381000,381600,382100,382400,382800,383300,383700,384100,384500,385000,385400,385800,386100,386500,386900,387300,387700,388100,388500,388900,389300,389700,390100,390500,390900,391300,391700,392100,392500,392900,393300,393700,394100,394500,394900,395300,395700,396100,396500,396900,397300,397700,398100,398500,399100,399700,400300,400900,401500,402100,402700,403300,403900,404500,405100,405700,406300],"5":[309800,311500,313200,314700,316100,317400,318700,320000,321300,323100,324900,326600,328300,330000,331700,333400,335000,336700,338400,340000,341500,343100,344700,346200,347600,349300,350900,352500,353700,355200,356700,358200,359900,361700,363400,365100,366500,367800,369000,370400,371500,372400,373400,374500,375300,376200,377100,377900,378700,379500,380300,381000,381700,382400,383100,383800,384300,384900,385500,386200,386600,387200,387800,388300,388700,389300,389900,390400,390800,391300,391800,392400,392700,393100,393500,393900,394200,394500,394800,395000,395200,395500,395800,396000,396200,396500,396800,397000,397200,397500,397800,398000,398200,398500,398800,399100,399400,400100,400800,401400,401900,402600,403300,403900,404400,405100,405800,406400,406900,407600,408300,408900,409400,410100,410700,411400,411900,412600,413200,413900,414300,415000,415600,416300,416800],"6":[335000,336900,338700,340500,342200,343900,345500,347200,348800,350500,352100,353700,355200,356900,358500,360100,361700,363500,365000,366600,368000,369600,371200,372700,374600,376500,378400,380200,381700,383500,385200,386800,388500,389900,391300,392700,394100,395300,396500,397500,398600,399800,400900,402000,402700,403400,404100,404800,405400,406000,406500,406900,407300,407500,407800,408100,408400,408700,409000,409300,409500,409800,410100,410400,410600,410900,411200,411500,411700,412000,412300,412500,412700,413000,413300,413500,413700,414000,414300,414500,414700,415000,415300,415500,415700,416400,417100,417800,418200,418900,419600,420300,420700,421400,422100,422800,423200,423900,424600,425200,425700],"7":[373400,376000,378300,380500,382400,384700,386800,388800,390800,393100,395300,397500,399700,402000,404200,406500,408300,410200,412100,413900,415700,417500,419300,421100,422700,424200,425700,427200,428700,430000,431300,432500,433700,435000,436300,437500,438700,439500,440300,441100,441700,442300,442900,443500,444200,445000,445400,446100,446600,447000,447400,447800,448200,448600,449000,449300,449600,450000,450300,450600,450900],"8":[415600,418000,420500,422900,424800,426900,429000,431200,433100,435200,437300,439200,440900,442700,444600,446500,448300,450100,451900,453600,455400,456900,458300,459800,461200,462500,463800,465000,466000,466700,467400,468100,468800,469500,470100,470700,471200,471800,472400,473000,473500,474000,474400,474700,475000],"9":[465500,468600,471600,474600,477600,480600,483600,486700,489400,492500,495500,498600,501300,503600,505900,508200,510200,511600,513100,514500,515700,517100,518600,520100,521200,522300,523500,524700,525700,526600,527500,528400,529200,530100,530800,531300,532000,532600,533400,534000,534500]},"irumatobu":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200,364300,364600,364900,365400,365800,366100,366400,366900,367300,367600,367900,368400,368800,369100,369400,369900,370300,370600,370900,371400],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500,396900,397300,397700,398000,398500,398900,399300,399600,400100,400500,400900,401200,401700,402100,402500,402800,403300,403700,404100,404400,404900,405300,405700,406000,406400,406800,407200,407500,408000,408400,409000,409600,410200,410800,411400,412000],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000,409200,409500,409900,410400,411100,411800,412400,412900,413600,414300,414900,415400,416100,416700,417400,417900,418600,419200,419800,420300,421000,421600,422300,422800,423500,424100,424800,425300,425900,426600,427300,427800],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"kenoh":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200,364500,364800,365100,365400,365700,366000,366300,366600,366900,367200,367500,367800,368100,368400,368700,368900,369100,369300,369500,369700,369900,370100,370300,370500,370700,370900,371100,371300],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500,397000,397500,398000,398500,399000,399500,400000,400500,401000,401500,402000,402500,403000,403500,404000,404500,405000,405500,406000,406500,407000,407500,408000,408500,409000,409500,410000,410500,410900,411300,411700,412100],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000,409500,410000,410500,411000,411500,412000,412500,413000,413500,414000,414500,415000,415500,416000,416500,417000,417500,418000,418500,419000,419500,420000,420500,421000,421500,422000,422500,423000,423500,424000,424500,425000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000,427600,428200,428800,429400,430000,430600,431200,431700,432200,432700,433200,433700,434200,434700,435200,435700,436200,436700,437200,437700,438200,438700,439200,439700,440200,440700,441200,441700,442200,442700,443200,443700,444200,444700,445200,445700,446200,446700,447200,447700],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000,463600,464200,464800,465400,466000,466600,467200,467800,468400,468900,469400,469900,470400,470900,471400,471900,472400,472900,473400,473900,474400,474900,475400,475900,476400,476900,477400,477900],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500,503000,504000]},"soka":{"1":[225600,228000,230400,232800,235100,237500,239900,242100,244300,246400,248500,250500,252400,254400,256400,258000,259600,261100,262600,264100,265600,267100,268600,270100,271600,272800,274000,275200,276400,277500,278600,279700,281000,282300,283500,284800,285700,286700,287800,288900,290100,290700,291300,291800,292200,292700,293200,293700,294100,294600,295100,295600,296100,296700,297100,297500,298000,298500,299000,299400,299900,300300,300800,301200,301700,302200,302600,303000,303500,303900,304300,304800,305300,305800,306400,306800,307300,307800,308400,309000,309500,310000,310700,311300,311900,312500,313200,313900,314600,315300,316000,316700,317200,318100,319000,319800,320500,321400,322300,323200,324100,325100,326100,327000,327800,328400,329000,329600,330100,330600,331000,331500,332300,332900,333600,334200,334800,335500,336200,336900,337500,337800,338300,338800,339100],"2":[246600,248800,251000,253200,255400,257400,259400,261200,263000,264700,266400,267800,269200,271000,272300,273700,275100,276300,277500,278600,279900,281000,282200,283300,284600,285900,287100,288300,289200,290200,291300,292300,293500,294100,294700,295300,295700,296300,296900,297400,297800,298400,299000,299500,299900,300400,300900,301400,301900,302400,303000,303500,304100,304700,305400,306000,306600,307400,308200,308900,309700,310500,311300,312200,313000,313800,314600,315400,316300,317100,318000,318900,319500,320400,321300,322100,322700,323600,324500,325500,326400,327400,328300,329300,330200,331200,332200,333200,334100,335400,336600,337800,339000,340300,341500,342700,343900,345200,346400,347600,349000,349900,350900,352000,353100,354200,355200,356200,357400,358400,359400,360300,361200,362100,363000,364000,365000,365400,366000,366600,366900,367300,367700,368100,368500,368900,369300,369700,370100,370500,370900,371300,371500,372000,372300,372600,372900,373300,373800,374300,374600,375100,375600,376100,376400],"3":[269600,271500,273600,275700,277700,279000,280300,281600,282900,284200,285400,286600,287800,288800,289800,291200,292300,293400,294500,295600,296800,297400,297900,298500,298900,299500,300000,300500,300900,301500,302000,302500,303000,303600,304000,304400,304900,305500,306100,306600,307200,307900,308600,309200,309800,310600,311400,312100,312900,313900,314900,315900,316900,318000,319000,320000,321000,322100,323200,324300,325100,326200,327300,328400,329300,330400,331500,332600,333600,334700,335900,337100,337800,339100,340400,341700,342900,344300,345700,347100,348400,350000,351500,353000,354400,355900,357400,358800,360100,361300,362500,363800,365100,366600,368100,369500,370800,372000,373100,374300,375400,376500,377600,378700,379900,380400,381000,381600,382200,382700,383100,383600,384000,384400,384900,385400,385800,386300,386900,387400,387600,388100,388600,389000,389500,390000,390500,391000,391300,391800,392300,392800,393100,393600,394000,394400,394700,395100,395600,396100,396400],"4":[308200,309200,310100,311000,311600,312300,312900,313600,314200,314900,315600,316200,316900,317600,318200,319000,319700,320500,321500,322300,323200,324400,325700,327000,328200,329700,331000,332000,332900,334100,335200,336300,337400,338600,339800,340800,341900,343100,344300,345500,346600,347700,348900,350100,351200,352500,353700,354900,356100,357400,358700,360000,360900,362200,363400,364600,365700,367000,368400,369800,371100,372600,374100,375500,376700,378100,379400,380800,381900,383100,384300,385500,386800,388000,389200,390300,391400,392600,393700,394900,396000,396600,397100,397600,398200,398800,399400,400000,400300,400800,401300,401800,402200,402600,403100,403600,404000,404500,405000,405400,405700,406100,406500,406800,407100,407600,408100,408600,408900,409400,409900,410400,410700,411200,411700,412200,412600,413100,413500,414000,414400],"5":[344100,345600,347000,348500,350000,351400,352700,354000,355300,356900,358500,360100,361500,363100,364600,366100,367600,369200,370700,372200,373700,375300,376900,378500,379900,381600,383300,384900,386500,388100,389700,391300,393000,395000,397000,399000,400700,402400,403900,405400,406600,407600,408600,409600,410600,411700,412800,413900,415200,416000,416800,417400,417900,418600,419200,419900,420200,420900,421600,422100,422500,422900,423400,423900,424400,424800,425300,425800,426300,426800,427400,427900,428300,428900,429300,429500,429800,430300,430600,430900,431200,431600,432000,432400,432700],"6":[365700,367400,369100,370700,372300,374000,375600,377100,378600,380200,381800,383400,385000,386600,388200,389800,391400,393000,394600,396200,397700,399300,401000,402700,404400,406400,408200,410100,411800,413200,414400,415700,416700,417800,418800,419800,420900,422000,423100,424200,425400,426200,427000,427600,428100,428800,429500,430100,430800,431200,431800,432400,432800,433200,433700,434200,434700,435200,435600,436000,436400,436700,437000,437300,437500,437800,438100,438300,438500,438800,439100,439300,439500,439800,440100,440300,440500,440800,441100,441300,441500,441800,442100,442300,442500],"7":[396700,398400,400000,401700,403200,404800,406400,408000,409500,411100,412700,414300,415800,417800,419800,421800,423300,425000,426600,428300,429900,431400,432900,434300,435500,437000,438500,439900,441400,442700,443900,445100,446100,446800,447500,448200,448700,449100,449500,449800,450100,450400,450700,451000,451200,451500,451800,452000,452300,452600,452900,453200,453400,453700,453900,454200,454400,454700,455000,455200,455400,455700,456000,456300,456500,456800,457100,457400,457600,457900,458200,458500,458700],"8":[433100,434700,436200,437700,439200,440800,442200,443600,444700,446100,447600,449100,450400,452100,453700,455300,456700,458400,460100,461700,463100,463800,464500,465200,465600,466100,466700,467300,467900,468600,469100,469600,470100,470400,470700,471100,471400,471600,471900,472100,472400,472600,472800,473000,473400]},"hiki":{"1":[211600,214000,216400,218800,221200,223600,226000,228200,230400,232500,234600,236600,238600,240600,242600,244200,245800,247300,248800,250300,251800,253400,254900,256400,257900,259100,260300,261500,262700,264000,265300,266600,267900,269400,270700,272100,273100,274400,275700,276900,278100,278700,279300,279900,280300,280900,281400,281900,282400,283000,283500,284000,284500,285100,285600,286100,286600,287100,287600,288100,288600,289100,289600,290100,290600,291100,291600,292100,292600,293100,293600,294100,294600,295200,295800,296300,296800,297400,298000,298600,299200,299900,300600,301200,301800,302500,303200,303900,304600,305400,306200,306900,307400,308300,309200,310000,310800,311800,312700,313600,314500,315500,316500,317400,318200,318800,319400,320000,320500,321000,321400,321900,322700,323400,324100,324700,325300,326000,326700,327500,328100,328400,328900,329400,329700],"2":[232600,234800,237000,239200,241400,243400,245400,247200,249000,250700,252400,253800,255200,257000,258400,259900,261400,262600,263800,264900,266200,267400,268700,270000,271400,272800,274100,275400,276400,277700,279000,280200,281400,282000,282600,283200,283700,284300,284900,285500,286000,286600,287200,287700,288200,288700,289200,289700,290300,290800,291400,292000,292600,293300,294000,294700,295300,296200,297000,297800,298600,299500,300400,301300,302100,303000,303800,304600,305500,306400,307300,308200,309000,309900,310800,311600,312300,313200,314100,315100,316000,317100,318100,319100,320000,321000,322000,323000,324000,325300,326500,327700,328900,330200,331400,332600,333800,335100,336300,337500,338900,339800,340800,341900,343000,344100,345100,346100,347300,348300,349300,350200,351100,352000,353000,354000,355000,355400,356000,356600,356900,357300,357700,358100,358500,358900,359300,359700,360100,360500,360900,361300,361500,362000,362400,362700,363000,363400,363900,364400,364700,365200,365700,366200,366500],"3":[255500,257500,259700,261900,264000,265300,266600,267900,269200,270500,271800,273100,274400,275600,276700,278200,279500,280800,282100,283300,284500,285100,285700,286300,286800,287400,288000,288500,289000,289600,290100,290600,291100,291700,292200,292700,293200,293800,294400,295000,295700,296400,297100,297800,298400,299300,300100,300900,301700,302800,303900,304900,305900,307000,308000,309100,310100,311200,312300,313400,314400,315500,316600,317700,318700,319800,320900,322000,323000,324200,325400,326600,327300,328600,329900,331200,332500,333900,335300,336700,338000,339600,341100,342600,344000,345500,347000,348400,349700,350900,352100,353400,354700,356200,357700,359100,360400,361600,362700,363900,365000,366100,367200,368300,369500,370000,370600,371200,371800,372300,372700,373200,373600,374000,374500,375000,375400,375900,376500,377000,377200,377700,378200,378600,379100,379600,380100,380600,380900,381400,381900,382400,382700,383200,383600,384000,384300,384800,385300,385800,386100],"4":[295400,296400,297400,298300,298900,299600,300300,301000,301700,302400,303100,303700,304400,305200,305900,306700,307400,308200,309200,310100,311000,312300,313600,314900,316200,317700,319000,320100,321100,322300,323500,324600,325700,326900,328100,329200,330300,331500,332700,333900,335100,336300,337500,338700,339900,341200,342400,343600,344800,346200,347500,348800,349700,351000,352200,353400,354600,356000,357400,358800,360100,361600,363100,364500,365700,367100,368400,369800,370900,372100,373300,374500,375800,377000,378200,379300,380400,381600,382700,383900,385000,385600,386100,386600,387200,387800,388400,389000,389300,389800,390300,390800,391200,391600,392100,392600,393000,393500,394000,394500,394800,395200,395700,396000,396300,396800,397300,397800,398100,398600,399100,399600,399900,400400,400900,401400,401800,402300,402700,403200,403600],"5":[331900,333400,334900,336400,337900,339300,340600,341900,343200,344800,346400,348000,349500,351100,352700,354200,355700,357300,358900,360400,361900,363500,365100,366700,368100,369800,371500,373100,374700,376300,377900,379600,381300,383300,385300,387300,389000,390700,392200,393700,394900,395900,396900,397900,399000,400100,401200,402300,403600,404400,405200,405800,406300,407000,407700,408400,408700,409400,410100,410600,411000,411400,411900,412400,412900,413300,413800,414300,414800,415300,415900,416400,416800,417400,417900,418100,418400,418900,419200,419500,419800,420200,420600,421000,421300],"6":[353300,355000,356700,358300,359900,361600,363200,364800,366400,368000,369600,371200,372800,374400,376000,377600,379200,380800,382400,384000,385600,387200,388900,390600,392300,394300,396200,398100,399800,401200,402400,403700,404700,405800,406800,407800,408900,410100,411200,412300,413500,414300,415100,415700,416200,416900,417600,418200,418900,419300,419900,420500,420900,421300,421800,422300,422800,423400,423800,424200,424600,424900,425200,425500,425800,426100,426400,426600,426800,427100,427400,427600,427800,428100,428400,428600,428800,429100,429400,429600,429800,430100,430400,430600,430800],"7":[384100,385800,387500,389200,390700,392300,393900,395500,397100,398700,400300,401900,403400,405400,407400,409400,410900,412600,414200,415900,417500,419000,420500,421900,423100,424600,426100,427500,429000,430300,431500,432700,433700,434400,435200,435900,436400,436800,437200,437500,437800,438100,438400,438700,438900,439200,439500,439800,440100,440400,440700,441000,441200,441500,441800,442100,442300,442600,442900,443100,443300,443600,443900,444200,444400,444700,445000,445300,445500,445800,446100,446400,446600],"8":[420300,421900,423500,425000,426500,428100,429500,430900,432000,433400,434900,436400,437700,439400,441000,442600,444000,445700,447400,449000,450400,451100,451800,452500,452900,453400,454000,454600,455200,455900,456400,456900,457400,457700,458000,458400,458800,459000,459300,459500,459900,460100,460300,460500,460900]},"nishiiruma":{"1":[183500,184600,185800,186900,188000,189700,191300,192900,194500,196200,197800,199400,201000,202700,204400,206100,207400,209000,210600,212100,213600,215200,216800,218400,220000,221700,223000,224300,225600,226700,227800,228900,230000,231100,232200,233300,234400,235400,236400,237300,238200,239100,239900,240700,241400,242000,242600,243200,243800,244400,245000,245500,246000,246400,246700,247000,247300,247600,247900,248200,248500,248800,249100,249400,249700,250000,250300,250600,250900,251200,251500,251800,252100,252400,252700,253000,253300,253600,253900,254200,254500,254800,255100,255400,255700,256000,256300,256600,256900,257200,257500,257800,258100],"2":[230000,231500,233000,234500,236000,237500,239000,240500,242000,243400,244800,246200,247400,248600,249800,251000,252100,253200,254300,255400,256400,257400,258400,259400,260400,261300,262200,263100,263900,264700,265500,266300,267000,267800,268600,269300,270000,270800,271600,272300,273000,273800,274600,275300,276000,276700,277400,278100,278800,279500,280200,280900,281500,282200,282800,283500,284100,284800,285400,286100,286700,287400,288000,288500,289000,289600,290100,290700,291200,291700,292300,292900,293400,293900,294300,294600,294800,295100,295300,295600,295800,296000,296300,296500,296800,297100,297400,297700,298000,298300,298600,299000,299200,299400,299700,300100,300300,300600,301000,301400,301600,301900,302200,302500,302700,303000,303300,303600,303800,304200,304600,304900,305100,305300,305600,306000,306200,306400,306700,307000,307400,307600,307900,308200,308500],"3":[265300,266300,267300,268300,269300,270300,271300,272300,273300,274300,275300,276400,277400,278700,280000,281200,282500,283800,285000,286200,287300,288500,289800,291100,292400,293400,294400,295500,296600,297800,298900,300100,301300,302600,303900,305200,306500,307800,309100,310400,311700,313000,314300,315400,316300,317600,318900,320200,321400,322700,323900,325100,326400,327500,328600,329700,330400,331300,332000,332800,333600,334000,334600,335300,336100,336800,337500,338100,338600,339200,339700,340300,340600,341100,341500,341900,342300,342800,343300,343800,344100,344500,344900,345300,345600,346000,346400,346800,347000,347400,347800,348200,348400,348800,349200,349500,349800,350200,350600,351000,351500,351900,352300,352700,353200,353600,353900,354200,354700],"4":[298800,300300,301800,303200,304600,305700,306700,307900,309100,310700,312300,313900,315400,317000,318600,320200,321700,323400,325000,326600,328000,329700,331400,333000,334200,336100,337800,339400,340900,342500,344100,345700,347400,349200,351000,352800,354300,355700,357100,358500,360000,360800,361800,362800,363700,364800,365700,366700,367600,368300,369000,369600,370000,370600,371300,372000,372300,373000,373700,374300,374600,375100,375700,376300,376600,377200,377900,378500,378900,379400,380000,380500,381000,381600,382100,382400,382800,383300,383700,384100,384500,385000,385400,385800,386100],"5":[321300,323100,324900,326600,328300,330000,331700,333400,335000,336700,338400,340000,341500,343100,344700,346200,347600,349300,350900,352500,353700,355200,356700,358200,359900,361700,363400,365100,366500,367800,369000,370400,371500,372400,373400,374500,375300,376200,377100,377900,378700,379500,380300,381000,381700,382400,383100,383800,384300,384900,385500,386200,386600,387200,387800,388300,388700,389300,389900,390400,390800,391300,391800,392400,392700,393100,393500,393900,394200,394500,394800,395000,395200,395500,395800,396000,396200,396500,396800,397000,397200,397500,397800,398000,398200],"6":[355200,356900,358500,360100,361700,363500,365000,366600,368000,369600,371200,372700,374600,376500,378400,380200,381700,383500,385200,386800,388500,389900,391300,392700,394100,395300,396500,397500,398600,399800,400900,402000,402700,403400,404100,404800,405400,406000,406500,406900,407300,407500,407800,408100,408400,408700,409000,409300,409500,409800,410100,410400,410600,410900,411200,411500,411700,412000,412300,412500,412700,413000,413300,413500,413700,414000,414300,414500,414700,415000,415300,415500,415700],"7":[408300,410200,412100,413900,415700,417500,419300,421100,422700,424200,425700,427200,428700,430000,431300,432500,433700,435000,436300,437500,438700,439500,440300,441100,441700,442300,442900,443500,444200,445000,445400,446100,446600,447000,447400,447800,448200,448600,449000,449300,449600,450000,450300,450600,450900]},"sakado":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"kodama":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"yoshikawa":{"1":[150100,151200,152400,153500,154600,155700,156800,157900,158900,160300,161600,162900,164100,165600,167100,168700,169800,171200,172600,174000,175300,177800,180300,182800,185200,186900,188500,190200,191700,193400,195200,196900,198500,200300,202100,203900,205400,207200,209000,210800,212400,214200,216000,217800,219200,221000,222700,224500,226100,227800,229400,230900,232200,233800,235400,236900,237900,239400,240700,241900,243100,244100,245100,246100,247200,248100,249000,250000,250900,252200,253400,254700,256000,257400,258600,259800,260900,262100,263400,264500,265600,266600,267800,268900,269900,270900,272000,273100,274000,275000,275900,277000,278100,279100,280000,281000,281500,282400,283100,284000,285000,285800,286600,287400,288200,288700,289100,289600,289800,290100,290300,290700,290900],"2":[234400,236000,237500,239000,240300,241900,243400,244900,246000,247500,249000,250300,251800,253000,254300,255500,256800,258200,259600,261100,262700,264400,266000,267600,269400,271200,272900,274600,276200,277900,279700,281200,282400,284100,285700,287400,289000,290700,292500,294300,295800,297500,299000,300600,302200,303900,305500,307200,308100,309600,311100,312700,314300,315900,317500,319000,320500,321700,322900,324100,324800,325700,326500,327300,328200,328600,329300,330100,330900,331600,332300,333000,333500,334100,334600,335200,335500,336000,336400,336900,337300,337800,338300,338800,339100,339500,340000,340400,340700,341100,341600,342000,342200,342600,343100,343500,343700,344100,344500,344800,345100,345500,345900,346300,346800,347200,347600,348000,348500,348900,349200,349500,350000,350400,350700,351000,351500,351900,352200,352500,353000,353400,353700,354000,354500,354900,355200,355500,356000,356400,356700,357000,357500],"3":[266000,267700,269200,271000,272700,274500,276300,278300,280200,282200,284100,286000,287900,289700,291200,292600,294400,296400,298500,300500,302400,304500,306500,308600,310300,312400,314400,316400,318100,320100,322200,324300,325500,327500,329400,331500,333400,335300,337300,339200,341100,343000,344800,346700,348200,349600,351100,352600,354200,355000,356200,357200,358100,359200,360100,361200,362100,362800,363500,364200,364600,365200,365900,366600,366900,367600,368300,369000,369300,369900,370600,371200,371500,372100,372800,373400,373800,374300,374900,375400,375900,376500,377000,377300,377700,378200,378600,379000,379400,379900,380300,380700,381000,381500,381900,382300,382600,383100,383500,383900,384200,384700,385100,385500,385800,386300,386700,387100,387400,387900,388300,388700,389000,389500,389900,390300,390600,391100,391500,391900,392200,392700,393100,393500,393800],"4":[290700,292900,295000,297000,298800,300800,302600,304200,306100,308400,310600,312900,315000,317100,319300,321400,323300,325300,327300,329300,331000,333100,335100,337200,338600,340500,342400,344300,345900,347800,349700,351500,353400,355200,357000,358700,360100,361400,362800,364200,365500,366400,367500,368600,369400,370300,371200,372100,373000,373800,374600,375400,376100,376800,377500,378200,378700,379300,379900,380600,381000,381700,382300,382900,383300,383900,384500,385100,385500,386000,386500,387100,387400,387800,388200,388600,388900,389200,389500,389800,390000,390300,390600,390800,391000,391300,391600,391800,392000,392300,392600,392800,393000,393300,393600,393800,394000,394300,394600,394800,395000,395300,395600,395800,396000,396300,396600,396800,397000,397300,397600,397800,398000,398300,398600,398800,399000,399300,399600,399800,400000,400300,400600,400800,401000],"5":[319200,321400,323700,325900,328100,330100,332300,334500,336400,338600,340600,342800,344600,346600,348600,350600,352300,354300,356100,358000,359900,361800,363800,365700,367700,369600,371600,373600,375100,376900,378700,380300,382100,383500,385000,386600,388000,389200,390400,391500,392600,393800,395000,396100,396800,397500,398200,398900,399500,400100,400600,401000,401400,401700,402000,402300,402600,402900,403200,403500,403800,404100,404400,404700,405000,405300,405600,405900,406100,406400,406700,407000,407200,407500,407800,408000,408200,408500,408800,409000,409200,409500,409800,410000,410200,410500,410800,411000,411200,411500,411800,412000,412200,412500,412800,413000,413200,413500,413800,414000,414200,414500,414800,415000,415200,415500,415800,416000,416200,416500,416800,417000,417200,417500,417800,418000,418200],"6":[362900,365500,367900,370500,372400,374900,377200,379700,382100,384800,387400,390100,392500,394800,397000,399400,401200,403200,405100,406900,408800,410600,412400,414300,416100,417600,419100,420700,422300,423600,424900,426100,427300,428600,429900,431100,432300,433100,433900,434700,435300,436000,436700,437400,438200,439000,439400,440100,440600,441000,441400,441800,442200,442600,443000,443300,443600,444000,444300,444600,444900,445300,445600,445900,446200,446600,446900,447200,447500,447900,448200,448500,448800,449200,449500,449800,450100,450500,450800,451100,451400,451800,452100,452400,452700,453100,453400,453700,454000,454400,454700,455000,455300,455700,456000,456300,456600],"7":[408100,410500,413000,415400,417300,419600,421700,423900,425900,428000,430100,432200,433900,435700,437700,439700,441600,443400,445200,446900,448700,450200,451600,453100,454500,455800,457100,458300,459300,460000,460800,461500,462200,463000,463700,464300,464800,465400,466000,466600,467100,467600,468000,468300,468600,469100,469500,469800,470100,470600,471000,471300,471600,472100,472500,472800,473100,473600,474000,474300,474600,475100,475500,475800,476100,476600,477000,477300,477600,478100,478500,478800,479100]},"chichibu":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"nansei":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"6":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"7":[471900,477200,482100,486700,490700,494100,497000,499500,501500],"8":[525300,532000,537100,541300,544700,547900,550800,553300,555300]},"koshigaya":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100],"2":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"3":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"4":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"5":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"6":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"7":[471900,477200,482100,486700,490700,494100,497000,499500,501500],"8":[525300,532000,537100,541300,544700,547900,550800,553300,555300]},"warabi":{"1":[218200,219700,221200,222700,224300,225700,227100,228500,229900,231700,233500,235400,237300,239300,241300,243300,245300,247400,249500,251600,253800,254400,255000,255600,256100,257000,257900,258800,259600,260300,261000,261700,262400,263600,264700,265800,266900,267900,268900,269800,270700,272000,273300,274600,275800,277200,278500,279800,281100,282200,283300,284400,285400,286400,287400,288400,289400,290400,291400,292400,293400,294300,295200,296100,297000,298000,299000,300000,300900,301800,302700,303600,304400,305200,306000,306800,307600,308800,309900,311000,312100,313300,314500,315700,316900,317800,318700,319600,320500,321700,322900,324100,325200,326100,327000,327800,328600,329500,330400,331300,332200,332700,333200,333700,334200,334700,335200,335600,336000,336200,336400,336500,336600,336800,337000,337200],"2":[254300,255900,257400,259000,260500,261100,261700,262300,262900,263800,264700,265500,266300,267100,267800,268500,269200,270300,271400,272400,273400,274500,275600,276700,277700,279200,280700,282200,283600,284800,286000,287100,288200,289400,290500,291600,292700,293600,294500,295300,296100,297000,297900,298700,299500,300600,301700,302800,303800,304800,305800,306800,307700,308600,309400,310200,311000,312400,313800,315200,316500,318000,319500,320900,322300,323800,325300,326700,328100,329300,330500,331700,332800,334400,336000,337500,339000,340500,342000,343400,344800,346400,347900,349400,350900,352400,353900,355400,356900,358300,359800,361400,362200,363600,365000,366300,367600,368900,370100,371300,372500,373600,374600,375600,376600,377400,378100,378800,379500,380200,380900,381600,382200,382800,383400,383900,384400,385000,385600,386100,386600,387200,387700,388300,388800,389400,390000,390600,391100,391700,392300,392900,393500,394100,394700,395200,395700,396300,396900,397500,398100,398600,399100,399600,400100,400700,401300,401900,402400,403000,403500,404000,404500,405000,405500,406000,406500,407000,407600,408200],"3":[305600,307400,309200,311000,312800,313800,314700,315600,316500,318200,320000,321600,323200,324900,326600,328200,329800,331100,332400,333600,334800,336500,338100,339800,341300,342800,344300,345800,347200,348600,349900,351200,352500,353900,355300,356700,358100,359500,360900,362300,363700,365100,366500,367900,369300,370600,372100,373800,374500,375900,377200,378500,379800,381200,382600,384000,385300,386700,388000,389300,390600,391600,392600,393500,394400,395200,395900,396700,397300,398000,398600,399200,399800,400400,401000,401600,402200,402800,403300,403800,404300,404900,405400,405900,406400,407000,407500,408000,408500,409100,409600,410100,410600,411100,411600,412100,412500,413000,413500,414000,414500,415000,415400,415800,416200,416800,417400,417900,418400,418900,419400,419900,420400,421000,421500,422000,422500,423100,423600,424100,424600,425200,425700,426200,426700,427300,427900,428500],"4":[341700,343800,345900,348000,350100,352000,353900,355800,357700,359600,361400,363200,365000,366800,368500,370200,371900,374000,376100,378100,380100,382100,384100,386100,388100,390100,392000,393900,395800,397700,399600,401400,402500,403900,405300,406600,407900,409100,410500,412000,413300,414200,415100,416000,416800,417600,418400,419200,419900,420500,421100,421600,422100,422700,423300,423900,424400,425000,425600,426100,426600,427100,427600,428100,428600,429100,429600,430100,430500,431100,431600,432100,432600,433100,433500,433900,434300,434700,435100,435500,435900,436300,436600,436900,437200,437600,438000,438400,438800,439400,440000,440500]},"toda":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200,364500,364800,365100,365400,365700,366000,366300,366600,366900,367200,367500,367800,368100,368400,368700,369000,369300,369600,369900,370200,370500,370800,371100,371400,371700,372000,372300,372600,372900,373200,373500,373800],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500,396900,397300,397700,398100,398500,398900,399300,399700,400100,400500,400900,401300,401700,402100,402500,402900,403300,403700,404100,404500,404900,405300,405700,406100,406500,406900,407300,407600,407900,408200,408500,408800,409100,409400,409700,410000,410300,410600,410900,411200,411500,411800,412100,412400,412700,413000,413300,413600,413900,414200,414500,414800,415100,415400],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000,409300,409600,409900,410200,410500,410800,411100,411400,411700,412000,412300,412600,412900,413200,413500,413800,414100,414400,414700,415000,415300,415600,415900,416200,416500,416800,417100,417400,417700,418000,418300,418600,418900,419200,419500,419800,420100,420400,420700,421000,421300,421600,421900,422200,422500,422800],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000,427300,427600,427900,428200,428500,428800,429100,429400,429700,430000,430300,430600,430900,431200,431500,431800,432100,432400,432700,433000,433300,433600,433900,434200,434500,434800,435100,435400,435700,436000,436300,436600,436900,437200,437500,437800,438100,438400,438700],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000,463300,463600,463900,464200,464500,464800,465100,465400,465700,466000,466300,466600,466900,467200,467500,467800,468100,468400,468700,469000,469300,469600,469900,470200,470500],"8":[471900,473300,474600,475900,477200,478100,478900,479700,480500,481300,482100,482700,483300,483900,484500,485100,485700,486200,486700,487100,487500,487900,488200,488500,488800,489100,489400,489700,490000,490300,490600,490900,491200,491500,491800,492100,492400,492700,493000,493300,493600,493900,494100,494300,494500]},"hanyu":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000]},"ageo":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100],"2":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"3":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"4":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"5":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"6":[424400,426900,429200,431600,434100,436500,438400,440500,442600,444800,446700,448800,450900,452800,454500,456300,458200,460100,461900,463700,465500,467200,469000,470500,471900,473300,474700,475900,477200,478300,479300,480000,480700,481400,482100,482800,483400,484000,484500,485100,485600,486200,486700],"7":[437200,440300,443400,446500,449600,452700,455800,458900,462000,465100,468200,471300,474400,477500,480600,483700,486700,489700,492700,495700,498700,501800,504500,507600,510600,513700,516400,518700,521000,523300,525300,526700,528200,529600,530800]},"tobu":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"misato":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200,364600,365000,365400,365900],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500,397100,397700,398300,399000],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[394800,397100,399200,401200,403200,405500,407700,409900,412100,414400,416600,418900,420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]},"hasuda":{"1":[195800,196900,198100,199200,200300,202000,203600,205200,206700,208400,210000,211600,213100,214800,216500,218200,219400,221000,222600,224100,225600,227200,228800,230400,232000,233700,235000,236300,237600,238700,239800,240900,242000,242900,243800,244800,245800,246700,247600,248400,249200,249900,250500,251100,251800,252400,253000,253600,254100,254700,255300,255800,256200,256600,256900,257200,257500,257800,258100,258400,258700,259000,259300,259600,259900,260200,260500,260800,261100,261400,261700,262000,262300,262600,262900,263200,263500,263800,264100,264400,264700,265000,265300,265600,265900,266200,266500,266800,267100,267400,267700,268000,268300],"2":[242000,243300,244700,246100,247500,248900,250300,251700,253100,254300,255600,256900,258100,259300,260500,261700,262800,263900,265000,266100,267000,268000,269000,270000,271000,271900,272700,273600,274400,275200,276000,276700,277400,278200,279000,279600,280300,281100,281800,282500,283200,283900,284600,285300,286000,286600,287300,287900,288600,289200,289900,290600,291100,291700,292300,293000,293600,294200,294800,295500,296100,296700,297200,297700,298200,298800,299300,299900,300300,300800,301300,301900,302400,302800,303100,303400,303600,303900,304100,304400,304600,304800,305100,305300,305600,305800,306100,306400,306700,307000,307300,307600,307800,308000,308300,308700,308900,309200,309500,309900,310100,310400,310700,311000,311200,311500,311800,312100,312300,312600,313000,313300,313500,313700,314000,314400,314600,314800,315100,315400,315700,315900,316200,316500,316800],"3":[276300,277300,278300,279300,280300,281300,282200,283200,284200,285200,286200,287200,288200,289500,290800,292000,293200,294500,295700,296900,297900,299100,300300,301600,302900,303900,304900,305900,307000,308200,309300,310500,311600,312900,314200,315500,316700,318000,319300,320600,321900,323100,324400,325500,326400,327700,329000,330300,331400,332700,333900,335100,336400,337400,338500,339600,340300,341200,341900,342700,343500,343900,344400,345100,345900,346600,347300,347900,348400,349000,349500,350100,350400,350900,351200,351600,352000,352500,353000,353500,353800,354200,354600,355000,355300,355700,356100,356500,356700,357100,357500,357900,358100,358400,358800,359100,359400,359800,360200,360600,361100,361500,361900,362300,362800,363200,363500,363800,364200],"4":[309800,311300,312700,314100,315500,316600,317600,318800,320000,321600,323200,324800,326200,327800,329400,331000,332400,334100,335700,337300,338700,340400,342100,343700,344900,346800,348500,350100,351600,353200,354800,356400,358100,359900,361700,363500,365000,366400,367800,369200,370700,371500,372400,373400,374300,375400,376300,377300,378200,378900,379600,380200,380600,381200,381800,382500,382800,383500,384200,384800,385100,385600,386200,386800,387100,387700,388400,389000,389400,389900,390500,391000,391500,392100,392500,392800,393200,393700,394100,394500,394900,395400,395800,396200,396500],"5":[332600,334400,336200,337900,339600,341300,343000,344600,346200,347900,349600,351200,352700,354300,355900,357400,358800,360500,362100,363700,364800,366300,367800,369300,371000,372800,374400,376100,377500,378800,380000,381400,382500,383400,384400,385400,386200,387100,388000,388800,389600,390400,391200,391900,392600,393300,394000,394700,395200,395800,396400,397100,397500,398100,398700,399200,399600,400200,400800,401300,401700,402200,402700,403300,403600,404000,404300,404700,405000,405300,405600,405800,406000,406300,406600,406800,407000,407300,407600,407800,408000,408300,408600,408800,409000],"6":[366800,368500,370100,371700,373300,375100,376600,378200,379500,381100,382700,384200,386100,388000,389900,391700,393200,395000,396700,398300,400000,401400,402800,404200,405600,406800,408000,409000,410100,411300,412400,413500,414200,414900,415500,416200,416800,417400,417900,418300,418700,418900,419200,419500,419800,420100,420400,420700,420900,421200,421400,421700,421900,422200,422500,422800,423000,423300,423600,423800,424000,424300,424600,424800,425000,425300,425600,425800,426000,426300,426600,426800,427000],"7":[420700,422600,424500,426300,428100,429900,431700,433500,435100,436600,438100,439600,441100,442400,443700,444900,446100,447400,448700,449900,451100,451900,452700,453500,454100,454700,455300,455900,456600,457400,457800,458500,459000,459400,459800,460200,460600,460900,461200,461500,461800,462100,462400,462700,463000],"8":[471900,477200,482100,486700,490700,494100,497000,499500,501500]}},"depts":[{"name":"さいたま市消防局","area":"さいたま市","table":"saitama","chiiki":15,"chiikiEst":false,"chiikiRaw":"12%"},{"name":"熊谷市消防本部","area":"熊谷市","table":"kumagaya","chiiki":3.0,"chiikiEst":false,"chiikiRaw":"3%","tableNote":"熊谷市行政職給料表（令和8年3月23日条例第2号）実データ"},{"name":"川口市消防局","area":"川口市","table":"kawaguchi","chiiki":9,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"行田市消防本部","area":"行田市","table":"gyoda","chiiki":6,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"春日部市消防本部","area":"春日部市","table":"kasukabe","chiiki":6,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"羽生市消防本部","area":"羽生市","table":"hanyu","chiiki":6,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"深谷市消防本部","area":"深谷市(+寄居町)","table":"fukaya","chiiki":3,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"上尾市消防本部","area":"上尾市(+伊奈町)","table":"ageo","chiiki":8,"chiikiEst":false,"chiikiRaw":"7%"},{"name":"越谷市消防局","area":"越谷市","table":"koshigaya","chiiki":6,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"蕨市消防本部","area":"蕨市","table":"warabi","chiiki":13,"chiikiEst":false,"chiikiRaw":"14%"},{"name":"戸田市消防本部","area":"戸田市","table":"toda","chiiki":10,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"三郷市消防本部","area":"三郷市","table":"misato","chiiki":6,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"蓮田市消防本部","area":"蓮田市","table":"hasuda","chiiki":4,"chiikiEst":false,"chiikiRaw":"5%"},{"name":"埼玉県南西部消防局","area":"朝霞市・志木市・和光市・新座市","table":"nansei","chiiki":12.0,"chiikiEst":false,"chiikiRaw":"12%"},{"name":"秩父消防本部","area":"秩父市・横瀬町・皆野町・長瀞町・小鹿野町","table":"chichibu","chiiki":4.0,"chiikiEst":false,"chiikiRaw":"0%→4%移行中（推定）"},{"name":"入間東部地区事務組合消防本部","area":"富士見市・ふじみ野市・三芳町","table":"irumatobu","chiiki":10.0,"chiikiEst":false,"chiikiRaw":"10%"},{"name":"吉川松伏消防組合消防本部","area":"吉川市・松伏町","table":"yoshikawa","chiiki":6,"chiikiEst":false,"chiikiRaw":"5%（推定）"},{"name":"児玉郡市広域消防本部","area":"本庄市・美里町・神川町・上里町","table":"kodama","chiiki":4,"chiikiEst":false,"chiikiRaw":"2%（推定）"},{"name":"坂戸・鶴ヶ島消防組合消防本部","area":"坂戸市・鶴ヶ島市","table":"sakado","chiiki":9.0,"chiikiEst":false,"chiikiRaw":"9%（推定）"},{"name":"比企広域消防本部","area":"東松山市・滑川町・嵐山町・小川町・吉見町・ときがわ町・東秩父村","table":"hiki","chiiki":6.0,"chiikiEst":false,"chiikiRaw":"6%"},{"name":"川越地区消防局","area":"川越市・川島町","table":"kawagoe","chiiki":7.0,"chiikiEst":false,"chiikiRaw":"7%"},{"name":"埼玉県央広域消防本部","area":"鴻巣市・桶川市・北本市","table":"kenoh","chiiki":6.0,"chiikiEst":false,"chiikiRaw":"6%"},{"name":"西入間広域消防組合消防本部","area":"毛呂山町・越生町・鳩山町","table":"nishiiruma","chiiki":4,"chiikiEst":false,"chiikiRaw":"3%"},{"name":"埼玉西部消防局","area":"所沢市・飯能市・狭山市・入間市・日高市","table":"seibu","chiiki":6.5,"chiikiEst":false,"chiikiRaw":"7.5%"},{"name":"埼玉東部消防組合消防局","area":"加須市・久喜市・幸手市・白岡市・宮代町・杉戸町","table":"tobu","chiiki":4,"chiikiEst":false,"chiikiRaw":"5%（推定）"},{"name":"草加八潮消防局","area":"草加市・八潮市","table":"soka","chiiki":6.0,"chiikiEst":false,"chiikiRaw":"6%"}],"meta":{"saitamaNote":"さいたま市消防職給料表（令和8年条例5号）実データ","nationalNote":"国の行政職俸給表(一)ベース（自治体固有の差異は未反映）","chiikiNote":"地域手当率：全26本部確定（一覧資料2025-07-03反映）","kumagayaNote":"熊谷市行政職給料表（令和8年条例2号）実データ・例規集より転記","tableLabels":{"saitama":"さいたま市消防職給料表（令和8年改正）","kumagaya":"熊谷市行政職給料表（令和8年条例2号）","kasukabe":"春日部市行政職給料表（令和8年条例8号・全部改正）","fukaya":"深谷市行政職給料表","kawaguchi":"川口市行政職給料表（令和7年条例101号・全部改正）","gyoda":"行田市行政職給料表（令和7年条例1号・全部改正）","kawagoe":"川越地区消防局 消防職給料表","seibu":"埼玉西部消防組合 給料表（9級制）","irumatobu":"入間東部地区事務組合 行政職給料表","kenoh":"埼玉県央広域事務組合 給料表（別表第1）","soka":"草加八潮消防局 給料表（令和8年条例1号・全部改正）","hiki":"比企広域市町村圏組合 消防職給料表（別表第2）","nishiiruma":"西入間広域消防組合 行政職給料表（7級制）","sakado":"坂戸・鶴ヶ島消防組合 給料表（別表第1）","kodama":"児玉郡市広域市町村圏組合 行政職給料表","yoshikawa":"吉川松伏消防組合 給料表（7級制）","chichibu":"秩父広域市町村圏組合 行政職給料表（別表第1）","nansei":"埼玉県南西部消防本部 行政職給料表（8級制）","koshigaya":"越谷市消防局 行政職給料表（8級制）","warabi":"蕨市消防本部 行政職給料表（4級制）","toda":"戸田市消防本部 行政職給料表（8級制）","hanyu":"羽生市消防本部 行政職給料表（7級制）","ageo":"上尾市消防本部 行政職給料表（7級制）","tobu":"埼玉東部消防組合 行政職給料表（8級制）","misato":"三郷市消防本部 行政職給料表（8級制）","hasuda":"蓮田市消防本部 行政職給料表（8級制）"},"rankMapConfirmed":["saitama","sakado","warabi"],"gradeCompressed":[],"rankMaps":{"warabi":{"消防士":1,"消防副士長":2,"消防士長":2,"消防司令補":3,"消防司令":4,"消防司令長":4,"消防監":4,"消防正監":4},"ageo":{"消防士":1,"消防副士長":1,"消防士長":2,"消防司令補":3,"消防司令":4,"消防司令長":5,"消防監":6,"消防正監":7},"koshigaya":{"消防士":1,"消防副士長":1,"消防士長":2,"消防司令補":3,"消防司令":4,"消防司令長":5,"消防監":6,"消防正監":7}}}};
+
+/* ============ 定数 ============ */
+const STEPS = [[1,'基本情報'],[2,'収入'],[3,'支出・プラン'],[4,'退職後'],[5,'保障の現状'],[6,'結果'],[7,'保険でカバー'],[8,'本部比較']];
+const RANKS = ['消防士','消防副士長','消防士長','消防司令補','消防司令','消防司令長','消防監','消防正監'];
+// 階級→級（さいたま市・坂戸鶴ヶ島は条例で確定、他は一般的な対応の推定）
+const RANK_GRADE_SAITAMA = {消防士:1,消防副士長:2,消防士長:3,消防司令補:4,消防司令:5,消防監:6,消防司令長:7,消防正監:8};
+const RANK_GRADE_DEFAULT = {消防士:1,消防副士長:2,消防士長:3,消防司令補:4,消防司令:5,消防司令長:6,消防監:7,消防正監:8};
+// 昇任までの標準勤続年数（号俸推定用の目安）
+const PROMO_YEARS = {1:0,2:8,3:12,4:18,5:24,6:30,7:34,8:38,9:42};
+// 教育費 年額(万円) 文科省 子供の学習費調査準拠
+const EDU_COSTS = {
+  el:{pub:32,pri:166}, jh:{pub:49,pri:141}, hs:{pub:51,pri:105}, un:{pub:82,pri:131},
+};
+const EDU_LABELS = {el:'小学校',jh:'中学校',hs:'高　校',un:'大　学'};
+let EDUS = []; // 子どもごとの進路設定
+// 退職手当支給率（国基準・定年退職、月数）主要点の折れ線近似
+const TAISHOKU_RATE = [[1,0.87],[5,4.35],[10,10.0],[15,20.4],[20,24.6],[25,33.3],[30,40.8],[35,47.709],[47,47.709]];
+
+const LIV_IDS=['livFood','livUtil','livTel','livGoods','livPocket','livCar','livOther'];
+function livingM(){ return LIV_IDS.reduce((a,id)=>a+(parseFloat(document.getElementById(id).value)||0),0); } // 万円/月
+const yen = n => Math.round(n).toLocaleString('ja-JP');
+const man = n => Math.round(n).toLocaleString('ja-JP');
+const $ = id => document.getElementById(id);
+const V = id => parseFloat($(id).value)||0;
+
+/* ============ ナビ ============ */
+let cur=1;
+function buildNav(){
+  $('stepnav').innerHTML = STEPS.map(([n,l])=>`<div class="step" id="tab${n}" onclick="go(${n})"><span class="no">STEP ${n}</span><span class="lb">${l}</span></div>`).join('');
+}
+function go(n){
+  cur=n;
+  document.body.classList.toggle('print7',n===7);
+  document.body.classList.toggle('print8',n===8);
+  STEPS.forEach(([i])=>{
+    $('p'+i).classList.toggle('active',i===n);
+    $('tab'+i).classList.toggle('active',i===n);
+    $('tab'+i).classList.toggle('done',i<n);
+  });
+  window.scrollTo(0,0);
+  recalc();
+}
+
+/* ============ 初期化 ============ */
+function init(){
+  buildNav();
+  $('dept').innerHTML = DATA.depts.map((d,i)=>`<option value="${i}">${d.name}</option>`).join('');
+  $('rank').innerHTML = RANKS.map(r=>`<option>${r}</option>`).join('');
+  $('retireRank').innerHTML = RANKS.map(r=>`<option ${r==='消防司令'?'selected':''}>${r}</option>`).join('');
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',onInput));
+  $('step').addEventListener('input',()=>{$('step').dataset.manual='1';});
+  $('dept').addEventListener('change',()=>{$('step').dataset.manual='0';applyDept();recalc();});
+  $('rank').addEventListener('change',()=>{$('step').dataset.manual='0';applyRank();recalc();});
+  $('years').addEventListener('input',()=>{applyRank();recalc();});
+  $('kidsN').addEventListener('change',buildKids);
+  const setFuyo=()=>{ if($('fuyo').dataset.manual!=='1') $('fuyo').value=(+$('kidsN').value)*13000; };
+  $('kidsN').addEventListener('change',setFuyo);
+  $('fuyo').addEventListener('input',()=>{$('fuyo').dataset.manual='1';});
+  setFuyo();
+  $('housing').addEventListener('change',housingVis);
+  applyDept(); applyRank(); buildKids(); housingVis();
+  go(1);
+}
+function onInput(){ recalc(); }
+function stepSlider(id,dir){
+  const el=$(id);
+  const step=parseFloat(el.step)||1;
+  const v=(parseFloat(el.value)||0)+dir*step;
+  el.value=Math.min(parseFloat(el.max),Math.max(parseFloat(el.min),v));
+  recalc();
+}
+function resetAll(){ if(confirm('入力内容をすべてリセットしますか？')) location.reload(); }
+
+function curDept(){ return DATA.depts[+$('dept').value]; }
+function curTable(){ return DATA.tables[curDept().table]; }
+function rankGradeMap(){
+  const t=curDept().table;
+  if((DATA.meta.rankMaps||{})[t]) return DATA.meta.rankMaps[t];
+  return t==='saitama'?RANK_GRADE_SAITAMA:RANK_GRADE_DEFAULT;
+}
+
+function applyDept(){
+  const d = curDept();
+  $('deptHint').textContent = d.area;
+  $('chiiki').value = d.chiiki;
+  $('chiikiHint').textContent = `県調査ベース：${d.chiikiRaw}` + (d.chiikiEst?'（要条例確認）':'');
+  const isReal = d.table!=='national';
+  const lbl = (DATA.meta.tableLabels||{})[d.table]||'';
+  $('tableBadge').className = 'badge ' + (isReal?'real':'est');
+  $('tableBadge').textContent = isReal?'実データ（'+lbl+'）':'国の俸給表ベース（概算）';
+  const rmConf = (DATA.meta.rankMapConfirmed||[]).includes(d.table);
+  $('salaryNote').innerHTML = isReal
+    ? '<b>'+lbl+'の実データ</b>を使用しています。'+(rmConf?'階級→級の対応も条例の等級別基準職務表で確認済みです。':'階級→級の対応は一般的な例による推定です。')
+    : '<b>国の行政職俸給表(一)をベースにした概算</b>です。自治体固有の給料表とは差異がある場合があります。正確な額は給与明細で確認し、基本給欄に直接入力してください。';
+  // 級プルダウン再構築
+  const gm = rankGradeMap();
+  applyRank();
+}
+function applyRank(){
+  const t = curTable();
+  const grades = Object.keys(t).map(Number).sort((a,b)=>a-b);
+  const gm = rankGradeMap();
+  const g = Math.min(gm[$('rank').value] || 1, Math.max(...grades));
+  $('grade').innerHTML = grades.map(x=>`<option value="${x}" ${x===g?'selected':''}>${x}級</option>`).join('');
+  estimateStep();
+}
+function estimateStep(force){
+  const g = +$('grade').value || 1;
+  const t = curTable();
+  const max = (t[g]||[]).length;
+  $('step').max = max;
+  if(force) $('step').dataset.manual='0';
+  if($('step').dataset.manual==='1'){
+    if(+$('step').value>max) $('step').value=max;
+    $('stepHint').textContent = `手動入力中。この級は1〜${max}号俸（級・本部を変えると再推定）`;
+    return;
+  }
+  const inGrade = Math.max(0, V('years') - (PROMO_YEARS[g]||0));
+  const est = Math.min(Math.max(Math.round(inGrade*4 + (g===1?21:9)), 1), max);
+  $('step').value = est;
+  $('stepHint').textContent = `勤続${V('years')}年からの推定。この級は1〜${max}号俸`;
+}
+document.addEventListener('change', e=>{ if(e.target.id==='grade') { estimateStep(true); recalc(); }});
+
+function buildKids(){
+  const n = +$('kidsN').value;
+  const prev = Array.from({length:n},(_,i)=>{
+    const e=document.getElementById('kidAge'+i);
+    return e&&e.value!==''?e.value:([3,1,0,0][i]||0);
+  });
+  $('kidsBox').innerHTML = Array.from({length:n},(_,i)=>
+    `<div class="kidrow"><label style="font-size:.78rem;font-weight:700;color:var(--steel)">第${i+1}子 年齢</label><input type="number" id="kidAge${i}" value="${prev[i]}" min="0" max="30" style="max-width:120px;padding:8px;border:1px solid var(--line);border-radius:7px;font-size:1rem"></div>`).join('') || '<div class="hint" style="font-size:.75rem;color:var(--steel)">お子さまなし</div>';
+  buildEdu();
+  document.querySelectorAll('#kidsBox input').forEach(el=>el.addEventListener('input',()=>{buildEdu();recalc();}));
+}
+function defaultEdu(){ return {el:'pub',jh:'pub',hs:'pub',un:'pub',nara:1,juku:1}; }
+function kidEduTotal(s){
+  return EDU_COSTS.el[s.el]*6 + EDU_COSTS.jh[s.jh]*3 + EDU_COSTS.hs[s.hs]*3 + EDU_COSTS.un[s.un]*4
+       + s.nara*12*15 + s.juku*12*9;
+}
+function buildEdu(){
+  const n = +$('kidsN').value;
+  while(EDUS.length<n) EDUS.push(defaultEdu());
+  EDUS.length=n;
+  if(n===0){ $('eduBox').innerHTML='<div class="hint" style="font-size:.75rem;color:var(--steel)">お子さまなし</div>'; return; }
+  $('eduBox').innerHTML = EDUS.map((s,i)=>`
+    <div class="kidcard">
+      <div class="khead"><span class="kname">第${i+1}子（現在 ${V('kidAge'+i)||0}歳）</span>
+        <span class="ktotal" id="kt${i}">約${man(kidEduTotal(s))}<small> 万円</small></span></div>
+      ${['el','jh','hs','un'].map(k=>`
+      <div class="edurow"><span class="el">${EDU_LABELS[k]}</span>
+        <div class="seg">
+          <button type="button" class="${s[k]==='pub'?'on':''}" onclick="setEdu(${i},'${k}','pub')">${k==='un'?'国公立':'公立'} ${EDU_COSTS[k].pub}万/年</button>
+          <button type="button" class="${s[k]==='pri'?'on':''}" onclick="setEdu(${i},'${k}','pri')">私立 ${EDU_COSTS[k].pri}万/年</button>
+        </div></div>`).join('')}
+      <div class="sliderrow"><span class="el">習い事</span>
+        <input type="range" min="0" max="10" step="0.5" value="${s.nara}" oninput="setEduN(${i},'nara',this.value)">
+        <span class="sv" id="nv${i}">月 ${s.nara}万円</span></div>
+      <div class="sliderrow"><span class="el">塾</span>
+        <input type="range" min="0" max="15" step="0.5" value="${s.juku}" oninput="setEduN(${i},'juku',this.value)">
+        <span class="sv" id="jv${i}">月 ${s.juku}万円</span></div>
+    </div>`).join('')
+    + `<div class="edu-grand"><span class="gl">お子さま${n}人分の教育費総額（概算）</span><span class="gv" id="eduGrand">約${man(EDUS.reduce((a,s)=>a+kidEduTotal(s),0))} 万円</span></div>`;
+}
+function setEdu(i,k,v){ EDUS[i][k]=v; buildEdu(); recalc(); }
+function setEduN(i,k,v){
+  EDUS[i][k]=+v;
+  $(k==='nara'?'nv'+i:'jv'+i).textContent='月 '+v+'万円';
+  $('kt'+i).innerHTML='約'+man(kidEduTotal(EDUS[i]))+'<small> 万円</small>';
+  $('eduGrand').textContent='約'+man(EDUS.reduce((a,s)=>a+kidEduTotal(s),0))+' 万円';
+  recalc();
+}
+function housingVis(){
+  const h = $('housing').value;
+  document.querySelectorAll('[data-h]').forEach(el=>{
+    el.style.display = el.dataset.h.split(' ').includes(h)?'':'none';
+  });
+  recalc();
+}
+
+/* ============ 計算コア ============ */
+function retireAge(age){
+  const fy60 = 2026 + (60 - age); // 60歳到達年度（概算）
+  if(fy60>=2031) return 65;
+  if(fy60>=2029) return 64;
+  if(fy60>=2027) return 63;
+  if(fy60>=2025) return 62;
+  return 61;
+}
+function baseSalary(){
+  const ov = V('baseOverride');
+  if(ov>0) return ov;
+  const t = curTable(), g=+$('grade').value||1, s=+$('step').value||1;
+  return (t[g]&&t[g][s-1])||0;
+}
+function taishokuRate(y){
+  for(let i=1;i<TAISHOKU_RATE.length;i++){
+    const [x1,r1]=TAISHOKU_RATE[i-1],[x2,r2]=TAISHOKU_RATE[i];
+    if(y<=x2) return r1+(r2-r1)*(y-x1)/(x2-x1);
+  }
+  return 47.709;
+}
+function model(){
+  const age=V('age'), years=V('years'), ra=retireAge(age);
+  const base=baseSalary();
+  const fuyo=V('fuyo');
+  const chiikiAmt=(base+fuyo)*V('chiiki')/100;
+  const month=base+fuyo+chiikiAmt+V('tokushu')+V('zangyo')+V('jukyo');
+  // 期末手当の基礎額には扶養手当を含み、勤勉手当には含まない（期末:勤勉≒半々と仮定）
+  const chiikiOnBase=base*V('chiiki')/100;
+  const bonus=(base+chiikiOnBase)*V('bonusM')+(fuyo+fuyo*V('chiiki')/100)*(V('bonusM')/2);
+  const annual=month*12+bonus;
+  const spouseInc=(+$('spouse').value)?V('spouseInc')*10000:0;
+  // 退職手当：退職時の想定階級の級を給料表から引く
+  const yearsAtRetire=years+(ra-age);
+  const gm=rankGradeMap(), t=curTable();
+  const rg=Math.min(gm[$('retireRank').value]||5, Math.max(...Object.keys(t).map(Number)));
+  const col=t[rg]||[];
+  const rStep=Math.min(Math.max(Math.round((yearsAtRetire-(PROMO_YEARS[rg]||0))*4+9),1),col.length);
+  const baseAtRetire=col[rStep-1]||base;
+  const taishoku=baseAtRetire*taishokuRate(yearsAtRetire);
+  // 年金：平均標準報酬額≒現在年収/12×0.9、加入=yearsAtRetire＋α
+  const avgHosyu=annual/12*0.9;
+  const koseiY=avgHosyu*5.481/1000*yearsAtRetire*12;
+  const pensionY=koseiY+V('kisoNenkin')+V('taishokuKyufu')*12;
+  return {age,years,ra,base,fuyo,chiikiAmt,month,bonus,annual,spouseInc,taishoku,baseAtRetire,yearsAtRetire,koseiY,pensionY};
+}
+function kidAges(){ return Array.from({length:+$('kidsN').value},(_,i)=>V('kidAge'+i)); }
+function eduCostAt(kidAge,i){
+  const s=EDUS[i]||defaultEdu();
+  let c=0;
+  if(kidAge>=6&&kidAge<=11) c+=EDU_COSTS.el[s.el];
+  else if(kidAge>=12&&kidAge<=14) c+=EDU_COSTS.jh[s.jh];
+  else if(kidAge>=15&&kidAge<=17) c+=EDU_COSTS.hs[s.hs];
+  else if(kidAge>=18&&kidAge<=21) c+=EDU_COSTS.un[s.un];
+  if(kidAge>=3&&kidAge<=17) c+=s.nara*12;
+  if(kidAge>=9&&kidAge<=17) c+=s.juku*12;
+  return c;
+}
+// 住居費を年額で {loan:ローン返済, other:その他} に分解して返す（円）
+function housingParts(a){
+  const h=$('housing').value;
+  const rentParts=(V('rent')+V('hKyoueki')+V('hParking'))*12+V('hKoushin'); // 万円/年
+  const ownParts=V('hKanri')*12+V('hKotei')+V('hKasai');                    // 万円/年
+  let loan=0, other=0;
+  if(h==='rent'){ other=rentParts; }
+  else if(h==='own'){ other=ownParts; }
+  else if(h==='loan'){ other=ownParts; loan=a<V('loanEnd')?V('loanPay')*12:0; }
+  else if(h==='plan'){
+    if(a<V('buyAge')){ other=rentParts; }
+    else { other=ownParts; loan=a<V('loanEnd')?V('loanPay')*12:0; }
+  }
+  return {loan:loan*10000, other:other*10000};
+}
+function housingCostAt(a){ const p=housingParts(a); return p.loan+p.other; }
+// 世帯の年間収支を年齢aで返す（万円）
+function cashflowAt(a,m){
+  const net=0.80; // 手取り換算
+  const f=Math.pow(1+V('infl')/100, a-m.age); // インフレ係数
+  let inc=0;
+  if(a<m.ra) inc+=m.annual*Math.pow(1.01,Math.min(a,55)-m.age)*net;
+  else if(a<V('pensionAge')) inc+=m.annual*0.5*net; // 再任用等の想定
+  else inc+=m.pensionY*0.9;
+  if(+$('spouse').value && a-m.age+V('spouseAge')<V('spouseWorkTo')) inc+=m.spouseInc*0.8;
+  if(+$('spouse').value && a-m.age+V('spouseAge')>=65) inc+=V('kisoNenkin')*0.9;
+  let exp=(livingM()*12+V('leisure')+V('carSave'))*10000*f*(a<m.ra?1:V('retireLiving')/100);
+  // 住居：ローン返済は固定、それ以外（家賃・管理費・税・保険）はインフレ連動
+  const hp=housingParts(a);
+  exp+=hp.loan+hp.other*f;
+  if($('housing').value==='plan'&&a===V('buyAge')) exp+=V('hAtamakin')*10000; // 頭金・諸費用
+  kidAges().forEach((k,i)=>exp+=eduCostAt(k+(a-m.age),i)*10000*f);
+  exp+=V('kojinPrem')*12;
+  if(a===m.ra) inc+=m.taishoku;
+  return inc-exp;
+}
+
+/* ============ 遺族シミュレーション ============ */
+// 死亡時点の配偶者年齢・子年齢から、計算期間（年数）を返す
+function deathHorizonYears(sAge0,kids0){
+  const h=$('deathHorizon').value;
+  if(h==='sp90') return Math.max(0,90-sAge0);
+  if(h==='sp65') return Math.max(0,65-sAge0);
+  if(h==='kid22'){
+    const ks=kids0.filter(k=>k<22);
+    if(ks.length===0) return Math.max(0,65-sAge0);
+    return 22-Math.min(...ks);
+  }
+  return Math.max(0,90-sAge0);
+}
+// 死亡を「今」と仮定した場合の遺族の年間収支系列
+function izokuSeries(m){
+  const sAge0=V('spouseAge'), kids0=kidAges();
+  const rows=[];
+  // 遺族（配偶者・18歳未満の子）がいなければ遺族の家計は発生しない
+  if(+$('spouse').value!==1 && kids0.filter(k=>k<18).length===0) return rows;
+  for(let t=0;t<=deathHorizonYears(sAge0,kids0);t++){
+    const sAge=sAge0+t;
+    const kids=kids0.map(k=>k+t);
+    const minors=kids.filter(k=>k<18).length;
+    // 遺族基礎年金（子のある配偶者）
+    let kiso=0;
+    if(minors>0){
+      kiso=V('kisoNenkin');
+      kiso+=Math.min(minors,2)*239300+Math.max(0,minors-2)*79800;
+    }
+    // 遺族厚生年金：報酬比例×3/4（在職死亡は300月みなし）
+    const months=Math.max(m.years*12,300);
+    const kosei=m.annual/12*0.9*5.481/1000*months*0.75;
+    // 中高齢寡婦加算
+    let kafu=0;
+    if(minors===0&&sAge>=40&&sAge<65&&+$('spouse').value) kafu=612000;
+    let izokuNenkin=(+$('spouse').value||minors>0)?kosei+kiso+kafu:0;
+    if(sAge>=65){ izokuNenkin=kosei+V('kisoNenkin'); }
+    // 配偶者収入
+    let sInc=(+$('spouse').value&&sAge<V('spouseWorkTo'))?m.spouseInc*0.8:0;
+    const f=Math.pow(1+V('infl')/100,t);
+    const expLiving=livingM()*10000*12*(V('izokuLiving')/100)*f;
+    const hp=housingParts(m.age+t);
+    const danshinOn=($('housing').value==='loan'||$('housing').value==='plan')&&+$('danshin').value===1;
+    const expHousing=(danshinOn?0:hp.loan)+hp.other*f;
+    let expEdu=0;
+    kids.forEach((k,i)=>expEdu+=eduCostAt(k,i)*10000*f);
+    const exp=expLiving+expHousing+expEdu;
+    rows.push({sAge,izokuNenkin,sInc,exp,expLiving,expHousing,expEdu});
+  }
+  return rows;
+}
+function needAmount(m){
+  const rows=izokuSeries(m);
+  let shortage=0;
+  rows.forEach(r=>{ shortage+=Math.max(0,r.exp-r.izokuNenkin-r.sInc); });
+  const deathTaishoku=m.base*taishokuRate(m.years); // 死亡退職手当（概算）
+  const existing=V('kojin')*10000;
+  const need=Math.max(0,shortage-deathTaishoku-existing);
+  return {shortage,deathTaishoku,existing,need,needAfterRetire:Math.max(0,shortage-deathTaishoku-V('kojin')*10000)};
+}
+
+/* ============ SVGチャート ============ */
+function svgOpen(w,h){return `<svg viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="xMidYMid meet">`;}
+
+function drawCliff(m){
+  const kojin=V('kojin');
+  const nenkinTotal=Math.round(izokuNenkinTotal(m,0)/10000);
+  const nenkinAfter=Math.round(izokuNenkinTotal(m,m.ra-m.age)/10000); // 定年時点で死亡した場合の実計算
+  const groups=[
+    {label:'在職中に万一のとき',bars:[[kojin,'#1A2744','個人'],[nenkinTotal,'#A8B4C8','遺族年金']]},
+    {label:`退職後（${m.ra}歳〜）に万一のとき`,bars:[[0,'#5B6B84',''],[kojin,'#1A2744','個人'],[nenkinAfter,'#A8B4C8','遺族年金']]}
+  ];
+  const W=920,H=300,pad=50;
+  const maxV=Math.max(1,...groups.map(g=>g.bars.reduce((s,b)=>s+b[0],0)));
+  let s=svgOpen(W,H);
+  const gw=(W-pad*2)/2;
+  groups.forEach((g,gi)=>{
+    const x=pad+gi*gw+gw*0.28, bw=gw*0.44;
+    let y=H-46;
+    let total=0;
+    g.bars.forEach(([v,c])=>{
+      if(v<=0)return;
+      const bh=v/maxV*(H-110);
+      y-=bh; total+=v;
+      s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${c}" rx="3"/>`;
+    });
+    s+=`<text x="${x+bw/2}" y="${y-12}" text-anchor="middle" font-size="24" font-weight="700" fill="${gi?'#E63946':'#1A2744'}">${man(total)}<tspan font-size="13">万円</tspan></text>`;
+    s+=`<text x="${x+bw/2}" y="${H-22}" text-anchor="middle" font-size="14" font-weight="700" fill="#5B6B84">${g.label}</text>`;
+  });
+  // 崖の演出：矢印と落差
+  const drop=nenkinTotal-nenkinAfter;
+  s+=`<line x1="${W/2}" y1="40" x2="${W/2}" y2="${H-46}" stroke="#DCE1E9" stroke-dasharray="4 4"/>`;
+  s+=`<text x="${W/2}" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#E63946">遺族年金の受取見込みは ${man(drop)}万円 減少</text>`;
+  s+='</svg>';
+  $('cliffChart').innerHTML=s;
+}
+
+function drawAsset(m){
+  const start=m.age,end=90;
+  let bal=V('savings')*10000;
+  const pts=[];
+  for(let a=start;a<=end;a++){ bal+=cashflowAt(a,m); pts.push([a,bal]); }
+  const W=920,H=280,pl=70,pr=20,pt=20,pb=36;
+  const minV=Math.min(0,...pts.map(p=>p[1])),maxV=Math.max(1,...pts.map(p=>p[1]));
+  const X=a=>pl+(a-start)/(end-start)*(W-pl-pr);
+  const Y=v=>pt+(maxV-v)/(maxV-minV)*(H-pt-pb);
+  let s=svgOpen(W,H);
+  // grid
+  for(let i=0;i<=4;i++){
+    const v=minV+(maxV-minV)*i/4, y=Y(v);
+    s+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="#EDF0F5"/>`;
+    s+=`<text x="${pl-8}" y="${y+4}" text-anchor="end" font-size="12" fill="#5B6B84">${man(v/10000)}万</text>`;
+  }
+  // zero line
+  s+=`<line x1="${pl}" y1="${Y(0)}" x2="${W-pr}" y2="${Y(0)}" stroke="#E63946" stroke-width="1.5"/>`;
+  // retirement marker
+  s+=`<line x1="${X(m.ra)}" y1="${pt}" x2="${X(m.ra)}" y2="${H-pb}" stroke="#E8912D" stroke-dasharray="5 4"/>`;
+  s+=`<text x="${X(m.ra)}" y="${pt+12}" font-size="12" fill="#E8912D" font-weight="700" text-anchor="middle">定年${m.ra}歳</text>`;
+  // area
+  let d=`M ${X(start)} ${Y(0)} `+pts.map(p=>`L ${X(p[0])} ${Y(p[1])}`).join(' ')+` L ${X(end)} ${Y(0)} Z`;
+  s+=`<path d="${d}" fill="#2A9D6F" opacity=".14"/>`;
+  s+=`<path d="M `+pts.map(p=>`${X(p[0])} ${Y(p[1])}`).join(' L ')+`" fill="none" stroke="#2A9D6F" stroke-width="2.5"/>`;
+  for(let a=Math.ceil(start/10)*10;a<=end;a+=10) s+=`<text x="${X(a)}" y="${H-12}" text-anchor="middle" font-size="12" fill="#5B6B84">${a}歳</text>`;
+  s+='</svg>';
+  $('assetChart').innerHTML=s;
+}
+
+function drawIzoku(m){
+  const rows=izokuSeries(m).slice(0,Math.min(45,90-V('spouseAge')));
+  if(!rows.length){$('izokuChart').innerHTML='<div class="hint">遺族となるご家族（配偶者・18歳未満のお子さま）の情報がないため表示できません</div>';return;}
+  const W=920,H=280,pl=70,pr=20,pt=16,pb=36;
+  const maxV=Math.max(...rows.map(r=>Math.max(r.izokuNenkin+r.sInc,r.exp)))*1.1;
+  const X=i=>pl+i/(rows.length-1)*(W-pl-pr);
+  const Y=v=>pt+(1-v/maxV)*(H-pt-pb);
+  let s=svgOpen(W,H);
+  for(let i=0;i<=4;i++){
+    const v=maxV*i/4;
+    s+=`<line x1="${pl}" y1="${Y(v)}" x2="${W-pr}" y2="${Y(v)}" stroke="#EDF0F5"/>`;
+    s+=`<text x="${pl-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#5B6B84">${man(v/10000)}万</text>`;
+  }
+  const bw=(W-pl-pr)/rows.length*0.7;
+  rows.forEach((r,i)=>{
+    const x=X(i)-bw/2;
+    const segs=[[r.expLiving,'#C7CFDC'],[r.expHousing,'#8D9AB0'],[r.expEdu,'#E8912D']];
+    let acc=0;
+    segs.forEach(([v,c])=>{
+      if(v<=0)return;
+      const h=(H-pt-pb)*v/maxV;
+      s+=`<rect x="${x}" y="${Y(acc+v)}" width="${bw}" height="${h}" fill="${c}"/>`;
+      acc+=v;
+    });
+  });
+  // 階段状の収入線（遺族年金＋配偶者収入）
+  const hw=(W-pl-pr)/rows.length/2;
+  let dstep='';
+  rows.forEach((r,i)=>{
+    const x1=X(i)-hw, x2=X(i)+hw, y=Y(r.izokuNenkin+r.sInc);
+    dstep+=(i===0?`M ${x1} ${y}`:` L ${x1} ${y}`)+` L ${x2} ${y}`;
+  });
+  s+=`<path d="${dstep}" fill="none" stroke="#1A2744" stroke-width="2.5" stroke-linejoin="miter"/>`;
+  rows.forEach((r,i)=>{ if(i%5===0) s+=`<text x="${X(i)}" y="${H-12}" text-anchor="middle" font-size="12" fill="#5B6B84">${r.sAge}歳</text>`;});
+  s+='</svg>';
+  $('izokuChart').innerHTML=s;
+}
+
+/* ============ 就業不能シミュレーション ============ */
+function disabilityModel(m){
+  const netMonth=m.annual/12*0.80; // 現在の月手取り（賞与込み・換算）
+  // 毎月の支出（就業不能時：現在の生活水準を維持する前提）
+  let exp=livingM()*10000+housingCostAt(m.age)/12+(V('leisure')+V('carSave'))*10000/12+V('kojinPrem');
+  kidAges().forEach((k,i)=>exp+=eduCostAt(k,i)*10000/12);
+  // 障害年金（2級想定）：障害厚生（報酬比例・300月みなし）＋障害基礎＋子加算
+  const months=Math.max(m.years*12,300);
+  const shogaiKosei=m.annual/12*0.9*5.481/1000*months;
+  const minors=kidAges().filter(k=>k<18).length;
+  const shogaiKiso=V('kisoNenkin')+Math.min(minors,2)*239300+Math.max(0,minors-2)*79800;
+  const shogaiM=(shogaiKosei+shogaiKiso)/12;
+  const hosho=V('shotoku')*10000; // 所得補償月額
+  const phases=[
+    {label:'病気休暇\n（〜90日）',    inc:netMonth,          w:1},
+    {label:'休職1年目\n（給与8割）',  inc:netMonth*0.8,      w:2},
+    {label:'休職2年目〜\n（傷病手当金 2/3）', inc:m.month*2/3, w:2.5},
+    {label:'その後\n（障害年金のみ）', inc:shogaiM,           w:3},
+  ];
+  phases.forEach(ph=>{ ph.total=ph.inc+hosho; ph.gap=Math.max(0,exp-ph.total); });
+  const worstGap=Math.max(...phases.map(p=>p.gap));
+  return {exp,phases,hosho,worstGap,shogaiM};
+}
+function drawDisability(d){
+  const W=920,H=300,pl=70,pr=20,pt=24,pb=52;
+  const maxV=Math.max(d.exp,...d.phases.map(p=>p.total))*1.15;
+  const Y=v=>pt+(1-v/maxV)*(H-pt-pb);
+  const totalW=d.phases.reduce((a,p)=>a+p.w,0);
+  let s=svgOpen(W,H), x=pl;
+  for(let i=0;i<=4;i++){
+    const v=maxV*i/4;
+    s+=`<line x1="${pl}" y1="${Y(v)}" x2="${W-pr}" y2="${Y(v)}" stroke="#EDF0F5"/>`;
+    s+=`<text x="${pl-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#5B6B84">${man(v/10000)}万</text>`;
+  }
+  d.phases.forEach(ph=>{
+    const bw=(W-pl-pr)*ph.w/totalW, gap=8;
+    const h1=(H-pt-pb)*ph.inc/maxV, h2=(H-pt-pb)*d.hosho/maxV;
+    s+=`<rect x="${x+gap/2}" y="${Y(ph.inc)}" width="${bw-gap}" height="${h1}" fill="#5B6B84" rx="3"/>`;
+    if(d.hosho>0) s+=`<rect x="${x+gap/2}" y="${Y(ph.total)}" width="${bw-gap}" height="${h2}" fill="#1A2744" rx="3"/>`;
+    s+=`<text x="${x+bw/2}" y="${Y(ph.total)-8}" text-anchor="middle" font-size="15" font-weight="700" fill="#1A2744">${man(ph.total/10000)}万</text>`;
+    if(ph.gap>0) s+=`<text x="${x+bw/2}" y="${Y(ph.total)-26}" text-anchor="middle" font-size="12" font-weight="700" fill="#E63946">▲不足 ${man(ph.gap/10000)}万/月</text>`;
+    ph.label.split('\n').forEach((ln,li)=>{
+      s+=`<text x="${x+bw/2}" y="${H-32+li*15}" text-anchor="middle" font-size="12" font-weight="700" fill="#5B6B84">${ln}</text>`;
+    });
+    x+=bw;
+  });
+  s+=`<line x1="${pl}" y1="${Y(d.exp)}" x2="${W-pr}" y2="${Y(d.exp)}" stroke="#E63946" stroke-width="2.5" stroke-dasharray="7 4"/>`;
+  s+=`<text x="${W-pr}" y="${Y(d.exp)-7}" text-anchor="end" font-size="13" font-weight="700" fill="#E63946">毎月の支出 ${man(d.exp/10000)}万円</text>`;
+  s+='</svg>';
+  $('disChart').innerHTML=s;
+}
+
+/* ============ STEP7：保険カバーチャート ============ */
+// 死亡年齢を dt 年後とした場合の必要保障額（円）
+function needAtDeath(m,dt){
+  const sAge0=V('spouseAge')+dt, kids0=kidAges().map(k=>k+dt);
+  const hasSp=+$('spouse').value===1;
+  if(!hasSp&&kids0.filter(k=>k<18).length===0) return 0;
+  let shortage=0;
+  for(let u=0;u<=deathHorizonYears(sAge0,kids0);u++){
+    const sAge=sAge0+u, kids=kids0.map(k=>k+u);
+    const minors=kids.filter(k=>k<18).length;
+    let kiso=0;
+    if(minors>0) kiso=V('kisoNenkin')+Math.min(minors,2)*239300+Math.max(0,minors-2)*79800;
+    const months=Math.max((m.years+dt)*12,300);
+    const kosei=m.annual/12*0.9*5.481/1000*months*0.75;
+    let kafu=0;
+    if(minors===0&&sAge>=40&&sAge<65&&hasSp) kafu=612000;
+    let nenkin=(hasSp||minors>0)?kosei+kiso+kafu:0;
+    if(sAge>=65) nenkin=kosei+V('kisoNenkin');
+    let sInc=(hasSp&&sAge<V('spouseWorkTo'))?m.spouseInc*0.8:0;
+    const f=Math.pow(1+V('infl')/100,dt+u);
+    const hp=housingParts(m.age+dt+u);
+    const danshinOn=($('housing').value==='loan'||$('housing').value==='plan')&&+$('danshin').value===1;
+    let exp=livingM()*10000*12*(V('izokuLiving')/100)*f+(danshinOn?0:hp.loan)+hp.other*f;
+    kids.forEach((k,i)=>exp+=eduCostAt(k,i)*10000*f);
+    shortage+=Math.max(0,exp-nenkin-sInc);
+  }
+  const deathTaishoku=m.base*taishokuRate(m.years+dt);
+  return Math.max(0,shortage-deathTaishoku-V('kojin')*10000);
+}
+// 死亡がdt年後の場合の遺族年金の受取総額（円）
+function izokuNenkinTotal(m,dt){
+  const sAge0=V('spouseAge')+dt, kids0=kidAges().map(k=>k+dt);
+  const hasSp=+$('spouse').value===1;
+  if(!hasSp&&kids0.filter(k=>k<18).length===0) return 0;
+  let total=0;
+  for(let u=0;u<=deathHorizonYears(sAge0,kids0);u++){
+    const sAge=sAge0+u, kids=kids0.map(k=>k+u);
+    const minors=kids.filter(k=>k<18).length;
+    let kiso=0;
+    if(minors>0) kiso=V('kisoNenkin')+Math.min(minors,2)*239300+Math.max(0,minors-2)*79800;
+    const months=Math.max((m.years+dt)*12,300);
+    const kosei=m.annual/12*0.9*5.481/1000*months*0.75;
+    let kafu=0;
+    if(minors===0&&sAge>=40&&sAge<65&&hasSp) kafu=612000;
+    let nenkin=(hasSp||minors>0)?kosei+kiso+kafu:0;
+    if(sAge>=65) nenkin=kosei+V('kisoNenkin');
+    total+=nenkin;
+  }
+  return total;
+}
+let _needCache={key:null,need:null};
+function drawProposal(m){
+  const horizon=Math.max(1,Math.min(80,Math.max(m.ra,V('propMat')))-m.age);
+  // 前提のフィンガープリント（スライダー以外の入力）でキャッシュ
+  const key=JSON.stringify([m.base,m.annual,m.years,m.age,$('spouse').value,V('spouseAge'),V('spouseInc'),V('spouseWorkTo'),
+    kidAges(),EDUS,V('infl'),$('housing').value,V('rent'),V('hKyoueki'),V('hParking'),V('hKoushin'),V('loanPay'),V('loanEnd'),
+    V('buyAge'),V('hAtamakin'),V('hKanri'),V('hKotei'),V('hKasai'),$('danshin').value,
+    V('kojin'),livingM(),V('kisoNenkin'),horizon,$('deathHorizon').value,V('izokuLiving'),V('retireLiving')]);
+  let need;
+  if(_needCache.key===key){ need=_needCache.need; }
+  else{
+    need=[];
+    for(let dt=0;dt<=horizon;dt++) need.push(needAtDeath(m,dt)/10000);
+    _needCache={key,need};
+  }
+  const mat=Math.max(m.age+1,V('propMat'));   // 満了年齢（最長80歳）
+  const monthsAll=(mat-m.age)*12;
+  // 月額上限：当初受取総額が1億円（10,000万円）になる月額
+  $('propDeathM').max=Math.max(1,Math.floor(10000/monthsAll));
+  const b=Math.min(V('propDeathM'),+$('propDeathM').max);
+  $('propDeathM').value=b;
+  $('propDeathMV').textContent=b+' 万円/月';
+  $('propMatV').textContent=mat+' 歳満了';
+  $('propTotalHint').textContent='当初受取総額：'+man(b*monthsAll)+'万円（上限1億円）';
+  const cover=need.map((_,dt)=>b*12*Math.max(0,mat-(m.age+dt))); // 収入保障型・万円
+
+  const W=920,H=340,pl=70,pr=20,pt=30,pb=44;
+  const maxV=Math.max(1,...need,...cover)*1.08;
+  const X=i=>pl+i/(need.length-1||1)*(W-pl-pr);
+  const Y=v=>pt+(1-v/maxV)*(H-pt-pb);
+  const bw=(W-pl-pr)/need.length*0.72;
+  let s=svgOpen(W,H);
+  for(let i=0;i<=4;i++){
+    const v=maxV*i/4;
+    s+=`<line x1="${pl}" y1="${Y(v)}" x2="${W-pr}" y2="${Y(v)}" stroke="#EDF0F5"/>`;
+    s+=`<text x="${pl-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#5B6B84">${man(v)}万</text>`;
+  }
+  // 必要保障額の棒
+  need.forEach((v,i)=>{
+    if(v<=0)return;
+    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="#EDF0F5" stroke="#E63946" stroke-width="1.2"/>`;
+  });
+  // 逓減定期の透過上塗り
+  cover.forEach((v,i)=>{
+    if(v<=0)return;
+    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="rgba(42,157,111,.55)"/>`;
+  });
+  // x軸ラベル
+  for(let a=m.age;a<=m.age+horizon;a+=5) s+=`<text x="${X(a-m.age)}" y="${H-14}" text-anchor="middle" font-size="12" fill="#5B6B84">${a}歳</text>`;
+  s+='</svg>';
+  $('propChart').innerHTML=s;
+
+  // 集計：未カバー年
+  let uncovered=0,maxGap=0,maxGapAge=null;
+  need.forEach((v,i)=>{
+    const gap=v-cover[i];
+    if(gap>0.5){uncovered++; if(gap>maxGap){maxGap=gap;maxGapAge=m.age+i;}}
+  });
+  $('propCalc').innerHTML=[
+    ['現時点の必要保障額',man(need[0])+' 万円'],
+    ['提案プラン',b+'万円/月 × '+mat+'歳満了（当初受取総額 '+man(b*monthsAll)+'万円）'],
+    ['カバーできていない年',uncovered===0?'なし（全期間カバー ✓）':uncovered+'年間'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v" style="font-size:.95rem;${k.includes('カバー')&&uncovered===0?'color:var(--green)':''}">${v}</span></div>`).join('')
+  +(uncovered>0?`<div class="calc-line total"><span>最大の不足（${maxGapAge}歳時点）</span><span class="v" style="color:var(--red)">${man(maxGap)} 万円</span></div>`:'');
+  drawProposalDis(m,key+'|dis|'+V('shotoku'));
+}
+// 就業不能が dt 年後に発症した場合の90歳までの不足総額（円）
+function disNeedAtOnset(m,dt){
+  const onsetAge=m.age+dt;
+  if(onsetAge>=65) return 0;
+  const months=Math.max((m.years+dt)*12,300);
+  const shogaiKosei=m.annual/12*0.9*5.481/1000*months;
+  let shortage=0;
+  for(let u=0;u<90-onsetAge;u++){
+    const f=Math.pow(1+V('infl')/100,dt+u);
+    const kids=kidAges().map(k=>k+dt+u);
+    const minors=kids.filter(k=>k<18).length;
+    const shogaiKiso=V('kisoNenkin')+Math.min(minors,2)*239300+Math.max(0,minors-2)*79800;
+    let inc;
+    if(u===0) inc=m.annual*0.80*0.85;                          // 病気休暇＋休職1年目（給与8割）の平均
+    else if(u===1) inc=m.month*2/3*12;                         // 傷病手当金（1年目）
+    else if(u===2) inc=m.month*2/3*6+(shogaiKosei+shogaiKiso)/2; // 傷病手当金残り6か月＋障害年金6か月
+    else inc=shogaiKosei+shogaiKiso;                           // 障害年金（65歳以降も継続受給を想定）
+    if(+$('spouse').value && V('spouseAge')+dt+u<V('spouseWorkTo')) inc+=m.spouseInc*0.8;
+    if(+$('spouse').value && V('spouseAge')+dt+u>=65) inc+=V('kisoNenkin')*0.9; // 配偶者の老齢基礎
+    const hp=housingParts(onsetAge+u);
+    // 65歳以降は退職後の生活費水準に低下
+    const livRatio=(onsetAge+u<65)?1:V('retireLiving')/100;
+    let exp=livingM()*10000*12*livRatio*f+hp.loan+hp.other*f;
+    kids.forEach((k,i)=>exp+=eduCostAt(k,i)*10000*f);
+    shortage+=Math.max(0,exp-inc);
+  }
+  // 傷病退職手当（発症時点の勤続年数分は支給される）と既加入の所得補償を控除
+  const shobyoTaishoku=m.base*taishokuRate(m.years+dt);
+  return Math.max(0,shortage-shobyoTaishoku-V('shotoku')*10000*12*(65-onsetAge));
+}
+let _disNeedCache={key:null,need:null};
+function drawProposalDis(m,key){
+  const horizon=Math.max(1,65-m.age);
+  let need;
+  if(_disNeedCache.key===key){ need=_disNeedCache.need; }
+  else{
+    need=[];
+    for(let dt=0;dt<=horizon;dt++) need.push(disNeedAtOnset(m,dt)/10000);
+    _disNeedCache={key,need};
+  }
+  const b=V('propDis');
+  $('propDisV').textContent=b+' 万円/月';
+  const cover=need.map((_,dt)=>b*12*Math.max(0,65-m.age-dt));
+
+  const W=920,H=340,pl=74,pr=20,pt=30,pb=44;
+  const maxV=Math.max(1,...need,...cover)*1.08;
+  const X=i=>pl+i/(need.length-1||1)*(W-pl-pr);
+  const Y=v=>pt+(1-v/maxV)*(H-pt-pb);
+  const bw=(W-pl-pr)/need.length*0.72;
+  let s=svgOpen(W,H);
+  for(let i=0;i<=4;i++){
+    const v=maxV*i/4;
+    s+=`<line x1="${pl}" y1="${Y(v)}" x2="${W-pr}" y2="${Y(v)}" stroke="#EDF0F5"/>`;
+    s+=`<text x="${pl-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#5B6B84">${man(v)}万</text>`;
+  }
+  need.forEach((v,i)=>{
+    if(v<=0)return;
+    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="#EDF0F5" stroke="#E63946" stroke-width="1.2"/>`;
+  });
+  cover.forEach((v,i)=>{
+    if(v<=0)return;
+    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="rgba(42,157,111,.55)"/>`;
+  });
+  for(let a=m.age;a<=m.age+horizon;a+=5) s+=`<text x="${X(a-m.age)}" y="${H-14}" text-anchor="middle" font-size="12" fill="#5B6B84">${a}歳</text>`;
+  s+='</svg>';
+  $('propDisChart').innerHTML=s;
+
+  let uncovered=0,maxGap=0,maxGapAge=null;
+  need.forEach((v,i)=>{
+    const gap=v-cover[i];
+    if(gap>0.5){uncovered++; if(gap>maxGap){maxGap=gap;maxGapAge=m.age+i;}}
+  });
+  $('propDisCalc').innerHTML=[
+    ['現時点で就業不能になった場合の不足総額（90歳まで）',man(need[0])+' 万円'],
+    ['提案プラン',b+'万円/月 × 65歳まで（当初受取総額 '+man(cover[0])+'万円）'],
+    ['カバーできていない年',uncovered===0?'なし（全期間カバー ✓）':uncovered+'年間'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v" style="font-size:.95rem;${k.includes('カバー')&&uncovered===0?'color:var(--green)':''}">${v}</span></div>`).join('')
+  +(uncovered>0?`<div class="calc-line total"><span>最大の不足（${maxGapAge}歳時点）</span><span class="v" style="color:var(--red)">${man(maxGap)} 万円</span></div>`:'');
+}
+
+/* ============ 生涯受取額・本部間比較 ============ */
+function renderLifetime(m){
+  let salary=0;
+  for(let a=m.age;a<m.ra;a++) salary+=m.annual*Math.pow(1.01,Math.min(a,55)-m.age);
+  const pension=m.pensionY*(90-V('pensionAge'));
+  const total=salary+m.taishoku+pension;
+  $('lifetimeBox').innerHTML=[
+    [`給与収入（${m.age}歳〜定年${m.ra}歳）`,man(salary/10000)+' 万円'],
+    ['退職手当',man(m.taishoku/10000)+' 万円'],
+    [`年金（${V('pensionAge')}歳〜90歳）`,man(pension/10000)+' 万円'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>生涯受取総額</span><span class="v" style="font-size:1.6rem">${(total/100000000).toFixed(2)} 億円</span></div>`;
+}
+function drawDeptCompare(m){
+  const rank=$('rank').value, years=V('years');
+  const fuyo=m.fuyo, extra=V('tokushu')+V('zangyo')+V('jukyo');
+  const comp=DATA.meta.gradeCompressed||[];
+  const rows=DATA.depts.map((d,i)=>{
+    const t=DATA.tables[d.table];
+    const gm = (DATA.meta.rankMaps||{})[d.table] || (d.table==='saitama'?RANK_GRADE_SAITAMA:RANK_GRADE_DEFAULT);
+    const gg=Math.min(gm[rank]||1, Math.max(...Object.keys(t).map(Number)));
+    const col=t[gg]||[];
+    const inG=Math.max(0, years-(PROMO_YEARS[gg]||0));
+    const st=Math.min(Math.max(Math.round(inG*4+(gg===1?21:9)),1), col.length);
+    const base=col[st-1]||0;
+    const month=base+fuyo+(base+fuyo)*d.chiiki/100+extra;
+    return {name:d.name.replace('消防本部','').replace('消防局','').replace('消防組合',''),month,me:i===+$('dept').value,est:d.chiikiEst,comp:comp.includes(d.table)};
+  }).sort((a,b)=>b.month-a.month);
+  const myRank=rows.findIndex(r=>r.me)+1;
+  const W=920,rowH=24,pl=190,pr=90,H=rows.length*rowH+16;
+  const maxV=rows[0].month;
+  let s=svgOpen(W,H);
+  rows.forEach((r,i)=>{
+    const y=8+i*rowH, bw=(W-pl-pr)*r.month/maxV;
+    s+=`<text x="${pl-8}" y="${y+15}" text-anchor="end" font-size="12" font-weight="${r.me?'900':'500'}" fill="${r.me?'#E63946':'#5B6B84'}">${r.name}${r.est?'※':''}${r.comp?'†':''}</text>`;
+    s+=`<rect x="${pl}" y="${y+3}" width="${bw}" height="${rowH-8}" fill="${r.me?'#E63946':'#C7CFDC'}" rx="3"/>`;
+    s+=`<text x="${pl+bw+6}" y="${y+15}" font-size="12" font-weight="${r.me?'700':'500'}" fill="${r.me?'#E63946':'#5B6B84'}">${yen(r.month)}円</text>`;
+  });
+  s+='</svg>';
+  $('deptCompareChart').innerHTML=s;
+  const nReal=DATA.depts.filter(x=>x.table!=='national').length;
+  const nEst=DATA.depts.filter(x=>x.chiikiEst).length;
+  const cMin=Math.min(...DATA.depts.map(x=>x.chiiki)), cMax=Math.max(...DATA.depts.map(x=>x.chiiki));
+  const srcTxt = nReal===DATA.depts.length
+    ? `全${nReal}本部とも各本部の条例の給料表（実データ）で計算しています。`
+    : `${nReal}本部は条例の給料表（実データ）、他${DATA.depts.length-nReal}本部は国の俸給表ベースの概算。`;
+  const estTxt = nEst>0 ? `※は地域手当率が推定値の本部。` : '';
+  const nComp=rows.filter(r=>r.comp).length;
+  const compTxt = nComp>0 ? `†は課長補佐級の給与帯を持たない級構成のため、消防司令以上の格付けのみ未確定（士長・司令補までは給与帯一致を確認済み）。` : '';
+  $('deptCompareNote').innerHTML=`${rank}・勤続${years}年の想定で、各本部の給料表に当てはめた月収（額面）の比較。号俸は勤続年数から推定、手当額は同一条件。あなたの本部は${DATA.depts.length}本部中 <b>${myRank}位</b>。差の主因は給料表と地域手当率（${cMin}%〜${cMax}%）です。${estTxt}${compTxt}${srcTxt}階級→級の対応が条例で確認できているのはさいたま市・坂戸鶴ヶ島のみで、他は一般的な対応による推定です。`;
+}
+
+/* ============ レンダリング ============ */
+function recalc(){
+  const m=model();
+  $('lbBase').innerHTML=m.base?yen(m.base)+'<small>円</small>':'-';
+  $('lbMonth').innerHTML=yen(m.month)+'<small>円</small>';
+  $('lbYear').innerHTML=man(m.annual/10000)+'<small>万円</small>';
+  $('lbRetire').innerHTML=m.ra+'<small>歳</small>';
+
+  $('incomeCalc').innerHTML=[
+    ['基本給',yen(m.base)+' 円'],
+    [`地域手当（${V('chiiki')}%）`,yen(m.chiikiAmt)+' 円'],
+    ['扶養手当',yen(m.fuyo)+' 円'],
+    ['夜勤・特殊勤務・時間外・住居',yen(V('tokushu')+V('zangyo')+V('jukyo'))+' 円'],
+    ['月収（額面）',yen(m.month)+' 円'],
+    [`賞与（年 ${V('bonusM')}月分・給料＋地域手当ベース）`,yen(m.bonus)+' 円'],
+  ].map(([k,v],i)=>`<div class="calc-line${i>=4?' total':''}"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>年収（額面）</span><span class="v">${man(m.annual/10000)} 万円</span></div>`;
+
+  $('retireCalc').innerHTML=[
+    ['あなたの定年年齢（概算）',m.ra+' 歳'],
+    ['定年時の勤続年数',m.yearsAtRetire+' 年'],
+    [`退職時給料月額（${$('retireRank').value}想定）`,yen(m.baseAtRetire)+' 円'],
+    ['支給率',taishokuRate(m.yearsAtRetire).toFixed(2)+' 月分'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>退職手当（概算）</span><span class="v">${man(m.taishoku/10000)} 万円</span></div>`;
+
+  $('pensionCalc').innerHTML=[
+    ['老齢厚生年金（年・概算）',man(m.koseiY/10000)+' 万円'],
+    ['老齢基礎年金（年）',man(V('kisoNenkin')/10000)+' 万円'],
+    ['年金払い退職給付（年）',man(V('taishokuKyufu')*12/10000)+' 万円'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>年金合計（年・概算）</span><span class="v">${man(m.pensionY/10000)} 万円（月 ${yen(m.pensionY/12)} 円）</span></div>`;
+
+  $('livTotal').textContent = livingM().toFixed(1)+' 万円（年 '+man(livingM()*12)+'万円）';
+  $('housingTotal').textContent = (housingCostAt(m.age)/10000/12).toFixed(1)+' 万円（年 '+man(housingCostAt(m.age)/10000)+'万円）';
+  if(cur===6) renderDash(m);
+  if(cur===7) drawProposal(m);
+  if(cur===8) drawDeptCompare(m);
+}
+function renderDash(m){
+  const n=needAmount(m);
+  const d=disabilityModel(m);
+  $('kpiBox').innerHTML=`
+    <div class="kpi ${n.need>0?'alert':''}"><div class="k">死亡時の必要保障額（不足分）</div><div class="v">${man(n.need/10000)}<small> 万円</small></div></div>
+    <div class="kpi ${d.worstGap>0?'alert':''}"><div class="k">就業不能時の最大不足額</div><div class="v">${man(d.worstGap/10000)}<small> 万円/月</small></div></div>
+    <div class="kpi"><div class="k">退職手当（概算）</div><div class="v">${man(m.taishoku/10000)}<small> 万円</small></div></div>`;
+  renderLifetime(m); drawCliff(m); drawAsset(m); drawIzoku(m); drawDisability(d);
+  $('disCalc').innerHTML=[
+    ['毎月の支出（生活費・住居・教育費等）',man(d.exp/10000)+' 万円/月'],
+    ['障害年金（2級想定・月額）',man(d.shogaiM/10000)+' 万円/月'],
+    ['所得補償保険の給付',man(d.hosho/10000)+' 万円/月'],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>最も苦しい時期の不足額 ＝ 必要補償月額</span><span class="v" style="color:var(--red)">${man(d.worstGap/10000)} 万円/月</span></div>`;
+  $('needCalc').innerHTML=[
+    ['遺族の家計不足の累計（90歳まで・概算）',man(n.shortage/10000)+' 万円',''],
+    ['− 死亡退職手当（概算）','− '+man(n.deathTaishoku/10000)+' 万円',''],
+    ['− 現在の保障（個人保険）','− '+man(n.existing/10000)+' 万円',''],
+  ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
+  +`<div class="calc-line total"><span>不足額 ＝ 必要保障額</span><span class="v" style="color:var(--red)">${man(n.need/10000)} 万円</span></div>`
+  +`<div class="note">※家計不足の累計は、遺族の支出から遺族年金・配偶者収入を差し引いた不足分を90歳まで合算した額。</div>`;
+  $('disclaimer').innerHTML='<b>【重要】</b>本シミュレーションは公開情報に基づく概算であり、実際の給与・退職手当・年金・保険金額を保証するものではありません。'
+    +(curDept().table==='national'?'基本給は国の行政職俸給表(一)ベースの概算です。':'')
+    +(curDept().chiikiEst?'地域手当率は推定値を含みます（要条例確認）。':'')
+    +'資産推移はインフレ率'+V('infl')+'%/年の前提です。正確な数値は給与明細・共済組合・ねんきん定期便でご確認ください。株式会社ResOne';
+}
+
+init();
+</script>
+</body>
+</html>
