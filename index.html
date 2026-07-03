@@ -758,11 +758,16 @@ function deathHorizonYears(sAge0,kids0){
 }
 // 死亡を「今」と仮定した場合の遺族の年間収支系列
 function izokuSeries(m){
-  const sAge0=V('spouseAge'), kids0=kidAges();
+  const hasSp=+$('spouse').value===1;
+  const sAge0=hasSp?V('spouseAge'):m.age; // 配偶者なしの場合は本人年齢を基準に
+  const kids0=kidAges();
   const rows=[];
   // 遺族（配偶者・18歳未満の子）がいなければ遺族の家計は発生しない
-  if(+$('spouse').value!==1 && kids0.filter(k=>k<18).length===0) return rows;
-  for(let t=0;t<=deathHorizonYears(sAge0,kids0);t++){
+  if(!hasSp && kids0.filter(k=>k<18).length===0) return rows;
+  // 配偶者なしの場合、計算期間は末子22歳まで（子の独立まで）
+  const horizon=hasSp?deathHorizonYears(sAge0,kids0):(kids0.length>0?22-Math.min(...kids0):0);
+  if(horizon<=0) return rows;
+  for(let t=0;t<=horizon;t++){
     const sAge=sAge0+t;
     const kids=kids0.map(k=>k+t);
     const minors=kids.filter(k=>k<18).length;
@@ -871,7 +876,9 @@ function drawAsset(m){
 }
 
 function drawIzoku(m){
-  const rows=izokuSeries(m).slice(0,Math.min(45,90-V('spouseAge')));
+  const hasSp=+$('spouse').value===1;
+  const sliceLen=hasSp?Math.min(45,90-V('spouseAge')):45;
+  const rows=izokuSeries(m).slice(0,sliceLen);
   if(!rows.length){$('izokuChart').innerHTML='<div class="hint">遺族となるご家族（配偶者・18歳未満のお子さま）の情報がないため表示できません</div>';return;}
   const W=920,H=280,pl=70,pr=20,pt=16,pb=36;
   const maxV=Math.max(...rows.map(r=>Math.max(r.izokuNenkin+r.sInc,r.exp)))*1.1;
@@ -963,11 +970,14 @@ function drawDisability(d){
 /* ============ STEP7：保険カバーチャート ============ */
 // 死亡年齢を dt 年後とした場合の必要保障額（円）
 function needAtDeath(m,dt){
-  const sAge0=V('spouseAge')+dt, kids0=kidAges().map(k=>k+dt);
   const hasSp=+$('spouse').value===1;
+  const sAge0=hasSp?V('spouseAge')+dt:m.age+dt;
+  const kids0=kidAges().map(k=>k+dt);
   if(!hasSp&&kids0.filter(k=>k<18).length===0) return 0;
+  const horizon=hasSp?deathHorizonYears(sAge0,kids0):(kids0.filter(k=>k<22).length>0?22-Math.min(...kids0.filter(k=>k<22)):0);
+  if(horizon<=0) return 0;
   let shortage=0;
-  for(let u=0;u<=deathHorizonYears(sAge0,kids0);u++){
+  for(let u=0;u<=horizon;u++){
     const sAge=sAge0+u, kids=kids0.map(k=>k+u);
     const minors=kids.filter(k=>k<18).length;
     let kiso=0;
@@ -991,11 +1001,14 @@ function needAtDeath(m,dt){
 }
 // 死亡がdt年後の場合の遺族年金の受取総額（円）
 function izokuNenkinTotal(m,dt){
-  const sAge0=V('spouseAge')+dt, kids0=kidAges().map(k=>k+dt);
   const hasSp=+$('spouse').value===1;
+  const sAge0=hasSp?V('spouseAge')+dt:m.age+dt;
+  const kids0=kidAges().map(k=>k+dt);
   if(!hasSp&&kids0.filter(k=>k<18).length===0) return 0;
+  const horizon=hasSp?deathHorizonYears(sAge0,kids0):(kids0.filter(k=>k<22).length>0?22-Math.min(...kids0.filter(k=>k<22)):0);
+  if(horizon<=0) return 0;
   let total=0;
-  for(let u=0;u<=deathHorizonYears(sAge0,kids0);u++){
+  for(let u=0;u<=horizon;u++){
     const sAge=sAge0+u, kids=kids0.map(k=>k+u);
     const minors=kids.filter(k=>k<18).length;
     let kiso=0;
