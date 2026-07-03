@@ -588,7 +588,7 @@ function estimateStep(force){
   $('step').value = est;
   $('stepHint').textContent = `勤続${V('years')}年からの推定。この級は1〜${max}号俸`;
 }
-function toggleSpouse(){ const show=+$('spouse').value===1; document.querySelectorAll('.spouseField').forEach(el=>el.style.display=show?'':'none'); }
+function toggleSpouse(){ const show=+$('spouse').value===1; document.querySelectorAll('.spouseField').forEach(el=>el.style.display=show?'':'none'); if(!show){ $('kidsN').value='0'; buildKids(); $('fuyo').dataset.manual='0'; $('fuyo').value=0; } }
 document.addEventListener('change', e=>{ if(e.target.id==='grade'||e.target.id==='edu') { estimateStep(true); recalc(); } if(e.target.id==='spouse'){ toggleSpouse(); recalc(); } });
 
 function buildKids(){
