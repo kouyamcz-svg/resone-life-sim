@@ -1178,7 +1178,9 @@ function drawDeptCompare(m){
     const gg=Math.min(gm[rank]||1, Math.max(...Object.keys(t).map(Number)));
     const col=t[gg]||[];
     const inG=Math.max(0, years-(PROMO_YEARS[gg]||0));
-    const st=Math.min(Math.max(Math.round(inG*4+(gg===1?21:9)),1), col.length);
+    const eduKey = $('edu').value || 'uni';
+    const initStep = gg===1 ? (EDU_INIT_STEP[eduKey]||21) : 9;
+    const st=Math.min(Math.max(Math.round(inG*4+initStep),1), col.length);
     const base=col[st-1]||0;
     const month=base+fuyo+(base+fuyo)*d.chiiki/100+extra;
     return {name:d.name.replace('消防本部','').replace('消防局','').replace('消防組合',''),month,me:i===+$('dept').value,est:d.chiikiEst,comp:comp.includes(d.table)};
