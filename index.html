@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --dark:#1A2744; --red:#E63946; --bg:#F7F8FA; --steel:#5B6B84;
+  --dark:#1A2744; --red:#FF8C00; --bg:#F7F8FA; --steel:#5B6B84;
   --amber:#E8912D; --green:#2A9D6F; --line:#DCE1E9; --ink:#22293A;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -351,7 +351,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
       <div class="chart-wrap" id="assetChart"></div>
       <div class="legend">
         <span><i style="background:#2A9D6F"></i>金融資産残高</span>
-        <span><i style="background:#E63946;height:3px;border-radius:0"></i>残高ゼロライン</span>
+        <span><i style="background:#FF8C00;height:3px;border-radius:0"></i>残高ゼロライン</span>
       </div>
     </div>
     <div class="card full">
@@ -370,7 +370,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
       <div class="legend">
         <span><i style="background:#5B6B84"></i>公的保障による収入（手取り換算）</span>
         <span><i style="background:#1A2744"></i>所得補償保険の給付</span>
-        <span><i style="background:#E63946;height:3px;border-radius:0"></i>毎月の支出</span>
+        <span><i style="background:#FF8C00;height:3px;border-radius:0"></i>毎月の支出</span>
       </div>
       <div id="disCalc" style="margin-top:12px"></div>
       <div class="note"><b>前提：</b>病気休暇（〜90日）は給与全額 → 休職1年目は給与の約8割 → 以降は無給となり共済の傷病手当金（標準報酬の2/3・最長1年6か月）→ その後は障害厚生年金＋障害基礎年金（2級想定）のみ。地方公務員の一般的な制度に基づく概算で、自治体・共済組合により異なります。公務災害の場合は補償が別枠で手厚くなります。</div>
@@ -417,7 +417,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
     <h3>年ごとの必要保障額と保険のカバー</h3>
     <div class="chart-wrap" id="propChart"></div>
     <div class="legend">
-      <span><i style="background:#EDF0F5;border:1px solid #E63946"></i>必要保障額（その年に万一があった場合の不足額）</span>
+      <span><i style="background:#EDF0F5;border:1px solid #FF8C00"></i>必要保障額（その年に万一があった場合の不足額）</span>
       <span><i style="background:rgba(42,157,111,.55)"></i>収入保障保険の受取総額（月額給付×満了までの残月数）</span>
     </div>
     <div id="propCalc" style="margin-top:12px"></div>
@@ -438,7 +438,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
     </div>
     <div class="chart-wrap" id="propDisChart"></div>
     <div class="legend">
-      <span><i style="background:#EDF0F5;border:1px solid #E63946"></i>不足総額（その年に働けなくなった場合・90歳まで）</span>
+      <span><i style="background:#EDF0F5;border:1px solid #FF8C00"></i>不足総額（その年に働けなくなった場合・90歳まで）</span>
       <span><i style="background:rgba(42,157,111,.55)"></i>就業不能保険の受取総額（月額給付×65歳までの残月数）</span>
     </div>
     <div id="propDisCalc" style="margin-top:12px"></div>
@@ -842,13 +842,13 @@ function drawCliff(m){
       y-=bh; total+=v;
       s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${c}" rx="3"/>`;
     });
-    s+=`<text x="${x+bw/2}" y="${y-12}" text-anchor="middle" font-size="24" font-weight="700" fill="${gi?'#E63946':'#1A2744'}">${man(total)}<tspan font-size="13">万円</tspan></text>`;
+    s+=`<text x="${x+bw/2}" y="${y-12}" text-anchor="middle" font-size="24" font-weight="700" fill="${gi?'#FF8C00':'#1A2744'}">${man(total)}<tspan font-size="13">万円</tspan></text>`;
     s+=`<text x="${x+bw/2}" y="${H-22}" text-anchor="middle" font-size="14" font-weight="700" fill="#5B6B84">${g.label}</text>`;
   });
   // 崖の演出：矢印と落差
   const drop=nenkinTotal-nenkinAfter;
   s+=`<line x1="${W/2}" y1="40" x2="${W/2}" y2="${H-46}" stroke="#DCE1E9" stroke-dasharray="4 4"/>`;
-  s+=`<text x="${W/2}" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#E63946">遺族年金の受取見込みは ${man(drop)}万円 減少</text>`;
+  s+=`<text x="${W/2}" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#FF8C00">遺族年金の受取見込みは ${man(drop)}万円 減少</text>`;
   s+='</svg>';
   $('cliffChart').innerHTML=s;
 }
@@ -870,7 +870,7 @@ function drawAsset(m){
     s+=`<text x="${pl-8}" y="${y+4}" text-anchor="end" font-size="12" fill="#5B6B84">${man(v/10000)}万</text>`;
   }
   // zero line
-  s+=`<line x1="${pl}" y1="${Y(0)}" x2="${W-pr}" y2="${Y(0)}" stroke="#E63946" stroke-width="1.5"/>`;
+  s+=`<line x1="${pl}" y1="${Y(0)}" x2="${W-pr}" y2="${Y(0)}" stroke="#FF8C00" stroke-width="1.5"/>`;
   // retirement marker
   s+=`<line x1="${X(m.ra)}" y1="${pt}" x2="${X(m.ra)}" y2="${H-pb}" stroke="#E8912D" stroke-dasharray="5 4"/>`;
   s+=`<text x="${X(m.ra)}" y="${pt+12}" font-size="12" fill="#E8912D" font-weight="700" text-anchor="middle">定年${m.ra}歳</text>`;
@@ -963,14 +963,14 @@ function drawDisability(d){
     s+=`<rect x="${x+gap/2}" y="${Y(ph.inc)}" width="${bw-gap}" height="${h1}" fill="#5B6B84" rx="3"/>`;
     if(d.hosho>0) s+=`<rect x="${x+gap/2}" y="${Y(ph.total)}" width="${bw-gap}" height="${h2}" fill="#1A2744" rx="3"/>`;
     s+=`<text x="${x+bw/2}" y="${Y(ph.total)-8}" text-anchor="middle" font-size="15" font-weight="700" fill="#1A2744">${man(ph.total/10000)}万</text>`;
-    if(ph.gap>0) s+=`<text x="${x+bw/2}" y="${Y(ph.total)-26}" text-anchor="middle" font-size="12" font-weight="700" fill="#E63946">▲不足 ${man(ph.gap/10000)}万/月</text>`;
+    if(ph.gap>0) s+=`<text x="${x+bw/2}" y="${Y(ph.total)-26}" text-anchor="middle" font-size="12" font-weight="700" fill="#FF8C00">▲不足 ${man(ph.gap/10000)}万/月</text>`;
     ph.label.split('\n').forEach((ln,li)=>{
       s+=`<text x="${x+bw/2}" y="${H-32+li*15}" text-anchor="middle" font-size="12" font-weight="700" fill="#5B6B84">${ln}</text>`;
     });
     x+=bw;
   });
-  s+=`<line x1="${pl}" y1="${Y(d.exp)}" x2="${W-pr}" y2="${Y(d.exp)}" stroke="#E63946" stroke-width="2.5" stroke-dasharray="7 4"/>`;
-  s+=`<text x="${W-pr}" y="${Y(d.exp)-7}" text-anchor="end" font-size="13" font-weight="700" fill="#E63946">毎月の支出 ${man(d.exp/10000)}万円</text>`;
+  s+=`<line x1="${pl}" y1="${Y(d.exp)}" x2="${W-pr}" y2="${Y(d.exp)}" stroke="#FF8C00" stroke-width="2.5" stroke-dasharray="7 4"/>`;
+  s+=`<text x="${W-pr}" y="${Y(d.exp)-7}" text-anchor="end" font-size="13" font-weight="700" fill="#FF8C00">毎月の支出 ${man(d.exp/10000)}万円</text>`;
   s+='</svg>';
   $('disChart').innerHTML=s;
 }
@@ -1071,7 +1071,7 @@ function drawProposal(m){
   // 必要保障額の棒
   need.forEach((v,i)=>{
     if(v<=0)return;
-    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="#EDF0F5" stroke="#E63946" stroke-width="1.2"/>`;
+    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="#EDF0F5" stroke="#FF8C00" stroke-width="1.2"/>`;
   });
   // 逓減定期の透過上塗り
   cover.forEach((v,i)=>{
@@ -1154,7 +1154,7 @@ function drawProposalDis(m,key){
   }
   need.forEach((v,i)=>{
     if(v<=0)return;
-    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="#EDF0F5" stroke="#E63946" stroke-width="1.2"/>`;
+    s+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${(H-pt-pb)*v/maxV}" fill="#EDF0F5" stroke="#FF8C00" stroke-width="1.2"/>`;
   });
   cover.forEach((v,i)=>{
     if(v<=0)return;
@@ -1214,9 +1214,9 @@ function drawDeptCompare(m){
   let s=svgOpen(W,H);
   rows.forEach((r,i)=>{
     const y=8+i*rowH, bw=(W-pl-pr)*r.month/maxV;
-    s+=`<text x="${pl-8}" y="${y+15}" text-anchor="end" font-size="12" font-weight="${r.me?'900':'500'}" fill="${r.me?'#E63946':'#5B6B84'}">${r.name}${r.est?'※':''}${r.comp?'†':''}</text>`;
-    s+=`<rect x="${pl}" y="${y+3}" width="${bw}" height="${rowH-8}" fill="${r.me?'#E63946':'#C7CFDC'}" rx="3"/>`;
-    s+=`<text x="${pl+bw+6}" y="${y+15}" font-size="12" font-weight="${r.me?'700':'500'}" fill="${r.me?'#E63946':'#5B6B84'}">${yen(r.month)}円</text>`;
+    s+=`<text x="${pl-8}" y="${y+15}" text-anchor="end" font-size="12" font-weight="${r.me?'900':'500'}" fill="${r.me?'#FF8C00':'#5B6B84'}">${r.name}${r.est?'※':''}${r.comp?'†':''}</text>`;
+    s+=`<rect x="${pl}" y="${y+3}" width="${bw}" height="${rowH-8}" fill="${r.me?'#FF8C00':'#C7CFDC'}" rx="3"/>`;
+    s+=`<text x="${pl+bw+6}" y="${y+15}" font-size="12" font-weight="${r.me?'700':'500'}" fill="${r.me?'#FF8C00':'#5B6B84'}">${yen(r.month)}円</text>`;
   });
   s+='</svg>';
   $('deptCompareChart').innerHTML=s;
