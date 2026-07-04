@@ -194,7 +194,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
   <div class="card">
     <h3>基本給 <span class="badge" id="tableBadge"></span></h3>
     <div class="grid">
-      <div class="field"><label>級（階級から自動）</label><select id="grade"></select></div>
+      <div class="field"><label>級（階級から自動）</label><select id="grade"></select><div class="hint">昇任直後などは前の級のままの場合があります。給与明細の「級号給」欄（例：01-030＝1級30号給）と異なるときは、ここを明細に合わせてください。</div></div>
       <div class="field"><label>号俸（勤続年数から推定・補正可）</label><input type="number" id="step" min="1" value="1"><div class="hint" id="stepHint"></div></div>
       <div class="field"><label>基本給（月額・直接入力で上書き可）</label><input type="number" id="baseOverride" placeholder="自動計算"><div class="hint">給与明細の「給料」欄の額</div></div>
     </div>
