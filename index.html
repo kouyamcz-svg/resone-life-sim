@@ -453,7 +453,7 @@ svg text{font-family:"Barlow Semi Condensed","Noto Sans JP",sans-serif}
       <span><i style="background:rgba(42,157,111,.55)"></i>就業不能保険の受取総額（月額給付×65歳までの残月数）</span>
     </div>
     <div id="propDisCalc" style="margin-top:12px"></div>
-    <div class="note">不足総額は、その年齢で公務外の病気・ケガにより働けなくなり復職しない前提での90歳までの家計不足の累計（発症1年目は給与等で約85%、その後1年6か月は傷病手当金2/3、以降は障害年金2級のみと仮定。生活費は現役時の70%水準、65歳以降は退職後の生活費水準に低下）。傷病退職手当（発症時点の勤続年数分）は控除済み。定年まで勤めた場合の退職手当との差額と、厚生年金の積み増し停止による老後の不足が反映されます。就業不能保険は65歳まで月額給付が続く型を想定しています。</div>
+    <div class="note">不足総額は、その年齢で公務外の病気・ケガにより働けなくなり復職しない前提での90歳までの家計不足の累計（発症1年目は給与等で約85%、その後1年6か月は傷病手当金2/3、以降は障害年金2級のみと仮定。生活費は現役時の70%水準、65歳以降は退職後の生活費水準に低下）。傷病退職手当（発症時点の勤続年数分）は控除済み。支出・配偶者収入の前提はSTEP6の月次計算と同一です。<b>就業不能保険（65歳まで給付）が対象にできるのは「65歳までの不足」の部分です。</b>65歳以降の不足は退職手当の減少・厚生年金の積み増し停止によるもので、貯蓄・iDeCo等で備える領域です。</div>
   </div>
   <div class="btnrow"><button class="btn prev" onclick="go(6)">← 戻る</button><button class="btn next" onclick="window.print()">この結果をPDFで渡す</button></div>
 </section>
@@ -947,15 +947,17 @@ function disabilityModel(m){
   const shogaiKiso=V('kisoNenkin')+Math.min(minors,2)*239300+Math.max(0,minors-2)*79800;
   const shogaiM=(shogaiKosei+shogaiKiso)/12;
   const hosho=V('shotoku')*10000; // 所得補償月額
+  // 配偶者収入（STEP7の年次モデルと同一の前提：就労予定年齢まで・手取り換算0.8）
+  const spouseM=(+$('spouse').value===1 && V('spouseAge')<V('spouseWorkTo'))?m.spouseInc*0.8/12:0;
   const phases=[
     {label:'病気休暇\n（〜90日）',    inc:netMonth,          w:1},
     {label:'休職1年目\n（給与8割）',  inc:netMonth*0.8,      w:2},
     {label:'休職2年目〜\n（傷病手当金 2/3）', inc:m.month*2/3, w:2.5},
     {label:'その後\n（障害年金のみ）', inc:shogaiM,           w:3},
   ];
-  phases.forEach(ph=>{ ph.total=ph.inc+hosho; ph.gap=Math.max(0,exp-ph.total); });
+  phases.forEach(ph=>{ ph.total=ph.inc+hosho+spouseM; ph.gap=Math.max(0,exp-ph.total); });
   const worstGap=Math.max(...phases.map(p=>p.gap));
-  return {exp,phases,hosho,worstGap,shogaiM};
+  return {exp,phases,hosho,spouseM,worstGap,shogaiM};
 }
 function drawDisability(d){
   const W=920,H=300,pl=70,pr=20,pt=24,pb=52;
@@ -1109,12 +1111,12 @@ function drawProposal(m){
   drawProposalDis(m,key+'|dis|'+V('shotoku'));
 }
 // 就業不能が dt 年後に発症した場合の90歳までの不足総額（円）
-function disNeedAtOnset(m,dt){
+function disNeedAtOnset(m,dt,detail){
   const onsetAge=m.age+dt;
-  if(onsetAge>=65) return 0;
+  if(onsetAge>=65) return detail?{total:0,pre65:0,post65:0}:0;
   const months=Math.max((m.years+dt)*12,300);
   const shogaiKosei=m.annual/12*0.9*5.481/1000*months;
-  let shortage=0;
+  let shortagePre=0,shortagePost=0;
   for(let u=0;u<90-onsetAge;u++){
     const f=Math.pow(1+V('infl')/100,dt+u);
     const kids=kidAges().map(k=>k+dt+u);
@@ -1130,13 +1132,18 @@ function disNeedAtOnset(m,dt){
     const hp=housingParts(onsetAge+u);
     // 65歳以降は退職後の生活費水準に低下
     const livRatio=(onsetAge+u<65)?0.70:V('retireLiving')/100;
-    let exp=livingM()*10000*12*livRatio*f+hp.loan+hp.other*f;
+    let exp=livingM()*10000*12*livRatio*f+hp.loan+hp.other*f+(V('leisure')+V('carSave'))*10000*0.70*f+V('kojinPrem')*12;
     kids.forEach((k,i)=>exp+=eduCostAt(k,i)*10000*f);
-    shortage+=Math.max(0,exp-inc);
+    const gap=Math.max(0,exp-inc);
+    if(onsetAge+u<65) shortagePre+=gap; else shortagePost+=gap;
   }
   // 傷病退職手当（発症時点の勤続年数分は支給される）と既加入の所得補償を控除
   const shobyoTaishoku=m.base*taishokuRate(m.years+dt);
-  return Math.max(0,shortage-shobyoTaishoku-V('shotoku')*10000*12*(65-onsetAge));
+  const deduct=shobyoTaishoku+V('shotoku')*10000*12*(65-onsetAge);
+  const pre65=Math.max(0,shortagePre-deduct);
+  const total=Math.max(0,shortagePre+shortagePost-deduct);
+  if(detail) return {total,pre65,post65:shortagePost};
+  return total;
 }
 let _disNeedCache={key:null,need:null};
 function drawProposalDis(m,key){
@@ -1180,8 +1187,11 @@ function drawProposalDis(m,key){
     const gap=v-cover[i];
     if(gap>0.5){uncovered++; if(gap>maxGap){maxGap=gap;maxGapAge=m.age+i;}}
   });
+  const det=disNeedAtOnset(m,0,true);
   $('propDisCalc').innerHTML=[
     ['現時点で就業不能になった場合の不足総額（90歳まで）',man(need[0])+' 万円'],
+    ['　うち65歳までの不足（就業不能保険の対象）',man(det.pre65/10000)+' 万円'],
+    ['　うち65歳以降の不足（参考：老後資金・貯蓄等の領域）',man(det.post65/10000)+' 万円'],
     ['提案プラン',b+'万円/月 × 65歳まで（当初受取総額 '+man(cover[0])+'万円）'],
     ['カバーできていない年',uncovered===0?'なし（全期間カバー ✓）':uncovered+'年間'],
   ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v" style="font-size:.95rem;${k.includes('カバー')&&uncovered===0?'color:var(--green)':''}">${v}</span></div>`).join('')
@@ -1337,6 +1347,7 @@ function renderDash(m){
   $('disCalc').innerHTML=[
     ['毎月の支出（生活費70%・住居・教育費等）',man(d.exp/10000)+' 万円/月'],
     ['障害年金（2級想定・月額）',man(d.shogaiM/10000)+' 万円/月'],
+    ['配偶者の収入（手取り換算・月額）',man(d.spouseM/10000)+' 万円/月'],
     ['所得補償保険の給付',man(d.hosho/10000)+' 万円/月'],
   ].map(([k,v])=>`<div class="calc-line"><span>${k}</span><span class="v">${v}</span></div>`).join('')
   +`<div class="calc-line total"><span>最も苦しい時期の不足額 ＝ 必要補償月額</span><span class="v" style="color:var(--red)">${man(d.worstGap/10000)} 万円/月</span></div>`;
